@@ -60,6 +60,20 @@ Repeat this cycle for each feature. **Strict Human Oversight**: The agent must c
                   - id: ruff
                     args: [--fix, --exit-non-zero-on-fix]
                   - id: ruff-format
+              - repo: local
+                hooks:
+                  - id: mypy
+                    name: mypy
+                    entry: bash -c 'PYTHONPATH=src uv run mypy src tests'
+                    language: system
+                    files: \.py$
+                    types: [python]
+                  - id: pytest
+                    name: pytest
+                    entry: uv run pytest --cov --cov-fail-under=85
+                    language: system
+                    files: \.py$
+                    types: [python]
             ```
           - Install hooks: `uv run pre-commit install`.
 
@@ -116,7 +130,7 @@ jobs:
         run: |
           uv run ruff check .
           uv run ruff format --check .
-          uv run mypy .
+          uv run mypy src tests
       - name: Run tests with coverage
         run: uv run pytest --cov --cov-fail-under=85
 ```

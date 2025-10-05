@@ -16,6 +16,6 @@ jobs:
         run: |
           uv run ruff check .
           uv run ruff format --check .
-          uv run mypy .
+          uv run mypy src tests
       - name: Run tests with coverage
         run: uv run pytest --cov --cov-fail-under=85
