@@ -2,6 +2,8 @@
 
 This document outlines a modular, phased implementation plan for the `biv` Python package, designed to detect and remove Biologically Implausible Values (BIVs) in longitudinal weight and height measurements. The plan is tailored for coding agents like Cline, Gemini CLI, or Grok Code Fast, emphasizing Test-Driven Development (TDD) as detailed in the attached [`tdd_guide.md`](tdd_guide.md).
 
+**Note**: This implementation plan should be read in conjunction with [`architecture.md`](architecture.md), which provides the detailed architecture overview, design principles, and high-level structure. The plan references the architectural components defined there.
+
 **TDD Instructions**: **Strictly follow the TDD protocol in `tdd_guide.md`** for all code changes, including the Red-Green-Refactor cycle, human confirmation checkpoints, and quality checks (e.g., `uv run pytest`, `uv run ruff check --fix .`, `uv run mypy .`). Before any code implementation, confirm requirements and test cases with a human, write failing tests, and only then implement minimally. After passing new tests, always run the full suite to ensure no regressions. Use the guide's version control workflow for commits after each TDD cycle.
 
 **Always start with the specific plan for the current phase**, based on this overall plan. Before starting any phase, **ask clarifying questions** if ambiguities arise (e.g., via user prompts in the agent interface). For example:
@@ -29,45 +31,12 @@ Failure to update the plan will lead to tracking errors—treat this as a mandat
 
 **Objective**: Establish the package skeleton, including directories, basic files, and dependencies. This ensures a clean, modular architecture where new methods can be added easily (e.g., by creating new subdirectories under `methods/`).
 
-**High-Level Structure** (Reference):
-```
-biv/
-├── biv/
-│   ├── __init__.py  # Exposes detect and remove functions
-│   ├── core.py      # Core module with detect and remove functions
-│   └── methods/
-│       ├── __init__.py
-│       ├── base.py
-│       ├── range/
-│       │   ├── __init__.py
-│       │   ├── detector.py
-│       │   └── utils.py  # Optional for method-specific helpers
-│       └── zscore/
-│           ├── __init__.py
-│           ├── detector.py
-│           └── utils.py  # Optional
-├── tests/
-│   ├── __init__.py
-│   ├── conftest.py
-│   ├── test_detect.py
-│   ├── test_remove.py
-│   └── methods/
-│       ├── __init__.py
-│       ├── test_range/
-│       │   ├── __init__.py
-│       │   └── test_detector.py
-│       └── test_zscore/
-│           ├── __init__.py
-│           └── test_detector.py
-├── README.md
-├── LICENSE  # MIT License
-└── pyproject.toml  # Core for uv: defines dependencies and build config
-```
+**High-Level Structure**: See [`architecture.md`](architecture.md) for the detailed architecture overview and proposed directory structure.
 
 **Checklist**:
 - [ ] Initialize project: Run `uv init biv` (creates `pyproject.toml` and virtual env). *Note: Update with commit hash or output.*
 - [ ] Add dependencies: Run `uv add pandas numpy` (runtime); `uv add --dev pytest pytest-cov ruff mypy pre-commit hypothesis` (dev, per `tdd_guide.md`). *Note: Update with installed versions.*
-- [ ] Create empty files and directories matching the high-level structure above. *Note: List created files.*
+- [ ] Create empty files and directories matching the structure detailed in [`architecture.md`](architecture.md). *Note: List created files.*
 - [ ] In `conftest.py`, add basic fixtures (e.g., `sample_data` as per conversation). *Note: Tests for fixtures pass?*
 - [ ] Configure Ruff, pytest, mypy, and coverage in `pyproject.toml` (per `tdd_guide.md` example). *Note: Config validated?*
 - [ ] Install pre-commit hooks (create `.pre-commit-config.yaml` and run `uv run pre-commit install`, per guide). *Note: Hooks installed?*
@@ -154,7 +123,7 @@ biv/
 **Objective**: Build biv.detect() to annotate the input DataFrame with boolean flag columns for BIVs using the specified methods, as per README.md API.
 
 **Files to Modify**:
-- `biv/core.py`: Add detect function with orchestrator logic.
+- `biv/api.py`: Add detect function with orchestrator logic (as per architecture.md).
 - `biv/__init__.py`: Expose detect.
 - `biv/methods/__init__.py`: Add registry for detectors.
 
@@ -162,7 +131,7 @@ biv/
 - [ ] Confirm requirements and generate test case table for detect behaviors (multi-method support, flag naming). *Note: Human confirmed?*
 - [ ] Red-Green-Refactor for core tests in `tests/test_detect.py` (e.g., range and zscore flags, custom thresh-wave). *Note: Cycle complete?*
 - [ ] Implement registry in `biv/methods/__init__.py`. *Note: Registry tested?*
-- [ ] Implement `detect` in `biv/core.py` minimally. *Note: Core tests passing?*
+- [ ] Implement `detect` in `biv/api.py` minimally. *Note: Core tests passing?*
 - [ ] Red-Green-Refactor for additional tests: Custom suffixes/columns, both methods combined. *Note: Cycles complete?*
 - [ ] Refactor: Match README params/docstrings; run quality checks (per guide). *Note: Linting passes?*
 - [ ] Update `__init__.py` to expose detect. *Note: Import works.*
@@ -175,7 +144,7 @@ biv/
 
 **Milestones/Tests**:
 - [ ] `uv run pytest tests/test_detect.py` passes.
-- [ ] `uv run ruff check biv/core.py` passes.
+- [ ] `uv run ruff check biv/api.py` passes.
 - [ ] Example usage matches README detect section.
 
 **Upon Phase Completion**: Update all checkboxes above as [x], add summary notes (e.g., "Phase 4 done: detect function ready"), commit the updated plan, and proceed to Phase 5. *Strong Reminder: Do not skip this!*
