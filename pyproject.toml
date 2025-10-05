@@ -12,3 +12,33 @@ dependencies = []
 [build-system]
 requires = ["uv_build>=0.8.23,<0.9.0"]
 build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+addopts = "--cov --cov-report=html --cov-fail-under=85"
+
+[tool.coverage.run]
+branch = true
+omit = ["tests/*", "*/__init__.py"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+disallow_untyped_defs = true
+
+[dependency-groups]
+dev = [
+    "hypothesis>=6.140.3",
+    "mypy>=1.18.2",
+    "pre-commit>=4.3.0",
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.13.3",
+]
+
