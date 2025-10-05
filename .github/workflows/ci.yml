@@ -1,0 +1,21 @@
+name: Python CI
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with: { python-version: '3.13' }
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install dependencies from lockfile
+        run: uv sync --frozen requirements.lock
+      - name: Run linting, formatting, and type checks
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run mypy .
+      - name: Run tests with coverage
+        run: uv run pytest --cov --cov-fail-under=85
