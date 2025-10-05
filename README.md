@@ -184,7 +184,7 @@ Identifies and removes BIVs, replacing them with `numpy.nan`. It accepts the sam
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit an issue or pull request to the [GitHub repository](https://github.com/seouri/biv).
+Contributions are welcome! Before submitting a pull request, ensure you've set up the development environment as above. We follow Test-Driven Development (TDD) practices as outlined in `tdd_guide.md`. Please submit an issue or pull request to the [GitHub repository](https://github.com/seouri/biv).
 
 
 ## License
