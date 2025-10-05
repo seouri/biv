@@ -111,7 +111,7 @@ jobs:
       - name: Install uv
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Install dependencies from lockfile
-        run: uv sync --frozen requirements.lock
+        run: uv sync --frozen
       - name: Run linting, formatting, and type checks
         run: |
           uv run ruff check .
@@ -239,4 +239,3 @@ While TDD is most effective at the **unit test** level, a robust application req
   - **Type Safety**: Use type hints and run `uv run mypy .` in the refactor step.
   - **Style Enforcement**: Use pre-commit hooks with `ruff` to automate formatting and linting.
   - **Property-Based Testing**: For functions with a wide range of inputs, use `hypothesis` to generate test cases automatically and uncover edge cases.
-
