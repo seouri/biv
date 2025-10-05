@@ -18,7 +18,7 @@ addopts = "--cov --cov-report=html --cov-fail-under=85"
 
 [tool.coverage.run]
 branch = true
-omit = ["tests/*", "*/__init__.py"]
+omit = ["tests/*"]
 
 [tool.ruff]
 line-length = 88
@@ -41,4 +41,3 @@ dev = [
     "pytest-cov>=7.0.0",
     "ruff>=0.13.3",
 ]
-

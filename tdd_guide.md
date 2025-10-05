@@ -34,7 +34,7 @@ Repeat this cycle for each feature. **Strict Human Oversight**: The agent must c
 
         [tool.coverage.run]
         branch = true
-        omit = ["tests/*", "*/__init__.py"]
+        omit = ["tests/*"]
 
         [tool.ruff]
         line-length = 88
