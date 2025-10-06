@@ -24,7 +24,7 @@ After completing **each full TDD cycle** (Red-Green-Refactor) and obtaining **hu
 - Marking the relevant checkbox as `- [x]`.
 - Adding a brief note under the task (e.g., "Completed: TDD cycle for X; human confirmed; quality checks passed; committed").
 - Running a full validation (e.g., `uv run pytest` and `uv run ruff check .`).
-Failure to update the plan will lead to tracking errors—treat this as a mandatory step before proceeding. No commits without human confirmation after each cycle. All commits must be on the phase-specific branch.
+Failure to update the plan will lead to tracking errors—treat this as a mandatory step before proceeding. No commits without human confirmation after each cycle. Commits must never bypass pre-commit hooks (e.g., no `git commit --no-verify`). All quality checks must pass before attempting to commit. All commits must be on the phase-specific branch.
 
 **Tooling Note**: This plan uses `uv` (from Astral) for fast dependency resolution, installation, and virtual environment management. Initialize with `uv init` for the project, use `uv add` for dependencies, and `uv sync` for locking the environment. All `pip` commands are replaced with `uv` equivalents. Ruff is integrated for linting and formatting (replacing tools like flake8, black, and isort) to ensure code quality. Follow `tdd_guide.md` for full setup (e.g., pre-commit, mypy).
 

@@ -95,8 +95,9 @@ Integrate Git commits at the end of each TDD cycle to maintain a clean, atomic h
   - **Agent Action**:
     1.  Run all checks: `uv run ruff check --fix .`, `uv run ruff format .`, and `uv run pytest`.
     2.  Stage changes: `git add .`.
-    3.  Commit with a descriptive message using conventional commits: `git commit -m "feat: handle empty cart total"`.
-    4.  Push after each commit: `git push`.
+    3.  **Strictly prevent bypassing pre-commit hooks**: Never use `git commit --no-verify` or any flags that skip quality checks. This defeats the purpose of enforced standards and can lead to code issues. Always ensure pre-commit hooks pass before committing.
+    4.  Commit with a descriptive message using conventional commits: `git commit -m "feat: handle empty cart total"`.
+    5.  Push after each commit: `git push`.
   - **Human Confirmation**: This is the primary checkpoint. The agent will pause here after each cycle.
 
 ### Squashing and Merging
