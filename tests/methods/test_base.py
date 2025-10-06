@@ -9,7 +9,7 @@ from typing import Dict
 
 def test_instantiating_base_detector_raises_type_error() -> None:
     with pytest.raises(TypeError):
-        BaseDetector()
+        BaseDetector()  # type: ignore[abstract]
 
 
 def test_subclass_without_detect_raises_type_error() -> None:
@@ -17,7 +17,7 @@ def test_subclass_without_detect_raises_type_error() -> None:
         pass
 
     with pytest.raises(TypeError):
-        Concrete()
+        Concrete()  # type: ignore[abstract]
 
 
 def test_validate_column_passes_for_existing_column() -> None:
@@ -113,7 +113,7 @@ def test_detect_does_not_modify_input_dataframe() -> None:
     original_df = pd.DataFrame({"col1": [1, 2, 3], "col2": [4, 5, 6]})
     copy_df = original_df.copy(deep=True)
 
-    result = detector.detect(original_df, ["col1", "col2"])
+    detector.detect(original_df, ["col1", "col2"])  # Call but no result needed
 
     pd.testing.assert_frame_equal(original_df, copy_df)  # df unchanged
 
