@@ -184,7 +184,7 @@ Identifies and removes BIVs, replacing them with `numpy.nan`. It accepts the sam
 
 ## Contributing
 
-Contributions are welcome! We follow Test-Driven Development (TDD) practices as outlined in `tdd_guide.md`. Please submit an issue or pull request to the [GitHub repository](https://github.com/seouri/biv).
+Contributions are welcome! We follow Test-Driven Development (TDD) practices as outlined in [`tdd_guide.md`](tdd_guide.md). For an overview of the package's architecture, see [`architecture.md`](architecture.md). Please submit an issue or pull request to the [GitHub repository](https://github.com/seouri/biv).
 
 ### Development Setup
 
@@ -221,7 +221,7 @@ To set up the development environment for the first time after cloning this repo
 
 ### Development Workflow
 
-- Follow TDD practices as described in `tdd_guide.md`.
+- Follow TDD practices as described in [`tdd_guide.md`](tdd_guide.md).
 - Pre-commit hooks will automatically run checks before each commit, matching GitHub Actions CI.
 - Push your feature branch and create a pull request. CI will verify all checks pass.
 
