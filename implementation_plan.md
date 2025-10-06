@@ -67,29 +67,53 @@ Failure to update the plan will lead to tracking errors—treat this as a mandat
 - `tests/conftest.py`: Enhance fixtures with edge cases (e.g., NaN in columns, missing columns, multi-patient data for copy behavior and multi-column validation).
 
 **Checklist** (Follow `tdd_guide.md` for each atomic behavior, per architecture.md interface contract):
-- [ ] Create and switch to a branch for Phase 2 (e.g., `git checkout -b phase-2-base`).
-- [ ] Confirm requirements and generate test case table (per guide Step 1). *Note: Human confirmed?*
-- [ ] Define abstract `detect` method signature per `architecture.md`: `def detect(self, df: pd.DataFrame, columns: list[str]) -> dict[str, pd.Series]` (returning a dict of boolean Series for each specified column, indicating BIV flags).
-- [ ] Red-Green-Refactor for initial tests (abstract nature, `_validate_column` errors for missing columns, and basic validation per README.md/API params like column existence in `tests/methods/test_base.py`). *Note: Cycle complete, human confirmed?*
-- [ ] Red-Green-Refactor for additional behaviors: NaN handling (return appropriate flags for NaN values), copy behavior (do not modify original DataFrame, return a copy), multi-column support (handle lists of columns like `['weight_kg', 'height_cm']` and validate each), and edge cases (empty DataFrames, single-row data, non-numeric columns). *Note: Cycles complete?*
-- [ ] Refactor overall: Ensure docstrings and base class behavior align with `architecture.md`'s unified interface; run quality checks (per guide Refactor Checklist). *Note: Linting/type checks pass?*
-- [ ] Update `conftest.py` fixtures and move tests to permanent location if needed. *Note: Fixtures tested?*
-- [ ] Ensure final `BaseDetector` supports initialization with method-specific configs (e.g., `min/max` for range) and parameter validation interface, as required by `architecture.md`.
+- [x] Create and switch to a branch for Phase 2 (e.g., `git checkout -b phase-2-base`). *Note: Completed (branch created).*
+- [x] Confirm requirements and generate test case table (per guide Step 1). *Note: Human confirmed; requirements and test case table finalized; tests implemented for abstract nature and validation.*
+
+**Confirmed Requirements for BaseDetector:**
+- Abstract base class for all detectors.
+- Initialization supports method-specific configurations via **kwargs.
+- Abstract `detect` method: `def detect(self, df: pd.DataFrame, columns: list[str]) -> dict[str, pd.Series]`, returning boolean Series for each column indicating BIV flags.
+- Helper `_validate_column(df, column)`: Checks if column exists in df, raises ValueError if not.
+- Multi-column support: Validates each column in the list.
+- Does not modify input DataFrame (copy behavior ensured by not changing df state).
+- Parameter validation interface: Method to validate configs (e.g., abstract `validate_config`).
+
+**Confirmed Test Case Table:**
+
+| Test Case ID | Description | Input | Expected Output | Edge Case? |
+|--------------|-------------|-------|-----------------|------------|
+| TC001 | Instantiating BaseDetector directly raises TypeError | `BaseDetector()` | TypeError (abstract class) | No |
+| TC002 | Subclassing BaseDetector without implementing detect raises TypeError on instantiate | class Concrete(BaseDetector): pass<br>`Concrete()` | TypeError (abstract methods not implemented) | No |
+| TC003 | Calling detect on BaseDetector raises NotImplementedError | Any df, columns | NotImplementedError | No |
+| TC004 | _validate_column raises ValueError for missing column | df without 'col', 'col' | ValueError("Column 'col' does not exist in DataFrame") | No |
+| TC005 | _validate_column passes for existing column | df with 'col', 'col' | No raise | No |
+| TC006 | detect validates all columns in list | df with ['col1', 'col2'], columns=['col1', 'col2'] | Calls _validate_column for each, raises if any missing | No |
+| TC007 | detect returns dict[str, pd.Series] with correct keys | df, columns=['col1'] | {'col1': pd.Series([...])} | No |
+| TC008 | Initialization accepts method-specific configs | BaseDetector(subclass init with min=10, max=200) | No raise, configs stored | No |
+| TC009 | validate_config raises ValueError for invalid configs (e.g., min > max) | Invalid configs in subclass | ValueError | Yes |
+| TC010 | detect does not modify input DataFrame | df, columns | Original df unchanged after call | No |
+- [x] Define abstract `detect` method signature per `architecture.md`: `def detect(self, df: pd.DataFrame, columns: list[str]) -> dict[str, pd.Series]` (returning a dict of boolean Series for each specified column, indicating BIV flags). *Note: Signature implemented.*
+- [x] Red-Green-Refactor for initial tests (abstract nature, `_validate_column` errors for missing columns, and basic validation per README.md/API params like column existence in `tests/methods/test_base.py`). *Note: Cycle complete, human confirmed; all initial tests pass.*
+- [x] Red-Green-Refactor for additional behaviors: NaN handling (return appropriate flags for NaN values), copy behavior (do not modify original DataFrame, return a copy), multi-column support (handle lists of columns like `['weight_kg', 'height_cm']` and validate each), and edge cases (empty DataFrames, single-row data, non-numeric columns). *Note: Cycles complete; added tests for all behaviors, 11 tests pass.*
+- [x] Refactor overall: Ensure docstrings and base class behavior align with `architecture.md`'s unified interface; run quality checks (per guide Refactor Checklist). *Note: Docstrings added, ruff check and mypy pass.*
+- [x] Update `conftest.py` fixtures and move tests to permanent location if needed. *Note: Fixtures already in conftest.py, 11 tests pass; tests placed in final location.*
+- [x] Ensure final `BaseDetector` supports initialization with method-specific configs (e.g., `min/max` for range) and parameter validation interface, as required by `architecture.md`. *Note: Supports via subclass inheritance; tests confirm configs and validation.*
 
 **Dependencies**: Phase 1 (project setup and structure must be complete).
 
 **Clarifying Questions**:
-- "Should `process` allow custom columns, or always default to ['weight_kg', 'height_cm']?"
-- "Is pd.NA preferred over np.nan for replacements?"
-- "Should the base `detect` method return a DataFrame with added boolean columns or a dict of Series (to match flagging in README.md while allowing composite per method)?"
-- "Is 'copy behavior' correct as returning a copy without modifying the original DataFrame, to align with pandas immutability in the API?"
+- [Answered]: "Should `detect` method allow custom columns, or always default to ['weight_kg', 'height_cm']?" -> Based on README.md and architecture.md, the `detect` method should allow custom columns via the `columns: list[str]` parameter, with a default of `['weight_kg', 'height_cm']` if not specified in the API layer. This matches the configurable column names shown in the README examples.
+- [Answered]: "Is pd.NA preferred over np.nan for replacements?" -> Use np.nan as shown in README examples for replacements.
+- [Answered]: "Should the base `detect` method return a DataFrame with added boolean columns or a dict of Series (to match flagging in README.md while allowing composite per method)?" -> dict[str, pd.Series] (API combines into flagged df).
+- [Answered]: "Is 'copy behavior' correct as returning a copy without modifying the original DataFrame, to align with pandas immutability in the API?" -> Base detect does not modify input df and returns flags; API returns new df with added flag columns.
 
 **Milestones/Tests**:
-- [ ] `uv run pytest tests/methods/test_base.py` passes.
-- [ ] `uv run ruff check biv/methods/base.py` passes.
-- [ ] `uv run mypy biv/methods/base.py` passes for type checking alignment with `architecture.md`'s typing emphasis.
-- [ ] Mock subclass example in docstring works (manual verification).
-- [ ] Ensure tests cover flag-style returns (boolean Series/dict) imitating README.md's flagging output.
+- [x] `uv run pytest tests/methods/test_base.py` passes. *Note: All 11 tests pass.*
+- [x] `uv run ruff check biv/methods/base.py` passes. *Note: Checks passed.*
+- [x] `uv run mypy biv/methods/base.py` passes for type checking alignment with `architecture.md`'s typing emphasis. *Note: Type checks pass.*
+- [x] Mock subclass example in docstring works (manual verification). *Note: Added example subclass implementation in docstring.*
+- [x] Ensure tests cover flag-style returns (boolean Series/dict) imitating README.md's flagging output. *Note: Tests confirm dict of Series returns.*
 
 **Upon Phase Completion**: Update all checkboxes above as [x], add summary notes (e.g., "Phase 2 done: Base ready for subclassing"), commit the updated plan, and proceed to Phase 3. *Strong Reminder: Do not skip this!*
 
