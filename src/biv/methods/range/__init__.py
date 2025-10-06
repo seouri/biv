@@ -1,0 +1,1 @@
+# Range method module
