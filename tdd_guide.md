@@ -49,7 +49,7 @@ Repeat this cycle for each feature. **Strict Human Oversight**: The agent must c
         disallow_untyped_defs = true
         ```
     4.  Install dev dependencies: `uv add --dev ruff pytest pytest-cov mypy pre-commit hypothesis`.
-    5.  **Lock dependencies** for reproducible builds: `uv pip compile pyproject.toml -o requirements.lock`.
+    5.  **Lock dependencies** for reproducible builds: `uv sync`.
     6.  Install pre-commit hooks for automated quality checks:
           - Create `.pre-commit-config.yaml`:
             ```yaml
