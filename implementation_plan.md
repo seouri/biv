@@ -132,12 +132,32 @@ Failure to update the plan will lead to tracking errors—treat this as a mandat
 
 ### Sub-Phase 3.1: RangeDetector
 **Checklist**:
-- [ ] Confirm requirements and generate test case table for RangeDetector behaviors with pydantic configs for type-safety and clear errors. *Note: Human confirmed?*
-- [ ] Add pydantic config model for range parameters (min/max per column). *Note: Implemented?*
-- [ ] Red-Green-Refactor for core tests in `tests/methods/test_range/test_detector.py` (e.g., `detect` for out-of-range/NaNs, config validation). *Note: Cycle complete?*
-- [ ] Implement `biv/methods/range/detector.py` (subclass `BaseDetector` with pydantic config). *Note: Tests passing?*
-- [ ] Red-Green-Refactor for edge cases: Zero values, extremes, config errors, non-health columns. *Note: Cycles complete?*
-- [ ] Refactor: Optimize for usability; run quality checks (per guide). *Note: Linting passes?*
+- [x] Confirm requirements and generate test case table for RangeDetector behaviors with pydantic configs for type-safety and clear errors. *Note: Human confirmed; requirements clarified (config dict[column, {min,max}], detection flags out of range, StrictFloat for type safety); test case table generated with 15 cases covering core and edges.*
+- [x] Add pydantic config model for range parameters (min/max per column). *Note: Implemented RangeConfig model with StrictFloat and field validators enforcing min<max; TDD cycles completed for config validation.*
+- [x] Red-Green-Refactor for core tests in `tests/methods/test_range/test_detector.py` (e.g., `detect` for out-of-range/NaNs, config validation). *Note: Cycle complete; wrote 15 failing tests (Red), implemented RangeDetector (Green), all tests pass (15/15); includes config validation with Pydantic ValidationError for missing/invalid min/max and StrictFloat for non-float rejection.*
+- [x] Implement `biv/methods/range/detector.py` (subclass `BaseDetector` with pydantic config). *Note: Tests passing? All 15 tests pass after implementation; includes detect logic for flagging (series < min) | (series > max), handling NaN correctly (False), Integrated pydantic for config validation with clear errors.**
+- [x] Red-Green-Refactor for edge cases: Zero values, extremes, config errors, non-health columns. *Note: Cycles complete; edge tests for zero/extreme values, empty DataFrames, large/small floats, config errors (min>max, missing keys/values), and DataFrame immutability included and passing.*
+- [x] Refactor: Optimize for usability; run quality checks (per guide). *Note: Linting passes; code refactored for modularity (pydantic v2 best practices); all quality checks (mypy, ruff, pytest) pass.*
+
+**Confirmed Test Case Table for RangeDetector:**
+
+| Test Case ID | Description | Input | Expected Output | Edge Case? |
+|--------------|-------------|-------|-----------------|------------|
+| TC001 | Detect flags values out of range | df['col']=[10,20,30], config col min=15 max=25 | [True, False, True] | No |
+| TC002 | Detect does not flag NaN | df['col']=[np.nan], config min=0 max=100 | [False] | No |
+| TC003 | Detect handles multi-column | config for col1, col2 | dict with series for both | No |
+| TC004 | Config validation: valid min<max | {'col':{'min':10,'max':20}} | No raise | No |
+| TC005 | Config validation: min>max -> ValueError | {'col':{'min':20,'max':10}} | ValueError | Yes |
+| TC006 | Config validation: missing min -> Pydantic ValidationError | {'col':{'max':20}} | ValidationError | Yes |
+| TC007 | Config validation: missing max -> Pydantic ValidationError | {'col':{'min':10}} | ValidationError | Yes |
+| TC008 | Config validation: non-float values -> ValidationError | {'col':{'min':'10'}} | ValidationError | Yes |
+| TC009 | Detect with only lower bound violation | val< min -> True | [True] | No |
+| TC010 | Detect with only upper bound violation | val> max -> True | [True] | No |
+| TC011 | Zero value in range | val=0, min=-1, max=1 -> False | [False] | Yes |
+| TC012 | Very large value | val=1e10, max=100 -> True | [True] | EDGE |
+| TC013 | Very small value | val=-1e10, min=0 -> True | [True] | EDGE |
+| TC014 | Empty DataFrame | empty df, columns=['col'] | empty Series | Yes |
+| TC015 | Detect does not modify DataFrame | same df before/after | df unchanged | No |
 
 ### Sub-Phase 3.2: ZScoreDetector
 **Checklist**:
