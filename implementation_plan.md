@@ -18,12 +18,13 @@ This document outlines a modular, phased implementation plan for the `biv` Pytho
 
 The plan is phased for modularity: Start high-level, drill into details. Each phase is presented as a **checklist** for clear progress tracking. Use markdown checkboxes (`- [ ]` for todo, `- [x]` for done) to mark completion.
 
-**STRONG INSTRUCTION ON UPDATING THIS PLAN**: After completing **each full TDD cycle** (Red-Green-Refactor) and obtaining **human confirmation**, **immediately update this `implementation_plan.md` file** by:
+**STRONG INSTRUCTION ON UPDATING THIS PLAN AND GIT WORKFLOW**: **MANDATORY: Work on a separate git branch for each phase.** Before starting any phase, create and switch to a new branch (e.g., `git checkout -b phase-2-base`). Work only prevents regression on this branch. After completing the phase (all checkboxes [x] and human confirmation), commit all changes including the updated plan, merge back to main (e.g., via pull request if using collaboration), and delete the branch.
+
+After completing **each full TDD cycle** (Red-Green-Refactor) and obtaining **human confirmation**, **immediately update this `implementation_plan.md` file on the branch** by:
 - Marking the relevant checkbox as `- [x]`.
 - Adding a brief note under the task (e.g., "Completed: TDD cycle for X; human confirmed; quality checks passed; committed").
 - Running a full validation (e.g., `uv run pytest` and `uv run ruff check .`).
-- Committing the updated plan to Git with a message like "feat: X cycle completed" (per `tdd_guide.md`).
-Failure to update the plan will lead to tracking errors—treat this as a mandatory step before proceeding. No commits without human confirmation after each cycle.
+Failure to update the plan will lead to tracking errors—treat this as a mandatory step before proceeding. No commits without human confirmation after each cycle. All commits must be on the phase-specific branch.
 
 **Tooling Note**: This plan uses `uv` (from Astral) for fast dependency resolution, installation, and virtual environment management. Initialize with `uv init` for the project, use `uv add` for dependencies, and `uv sync` for locking the environment. All `pip` commands are replaced with `uv` equivalents. Ruff is integrated for linting and formatting (replacing tools like flake8, black, and isort) to ensure code quality. Follow `tdd_guide.md` for full setup (e.g., pre-commit, mypy).
 
@@ -66,6 +67,7 @@ Failure to update the plan will lead to tracking errors—treat this as a mandat
 - `tests/conftest.py`: Enhance fixtures with edge cases (e.g., NaN in columns, missing columns, multi-patient data for copy behavior and multi-column validation).
 
 **Checklist** (Follow `tdd_guide.md` for each atomic behavior, per architecture.md interface contract):
+- [ ] Create and switch to a branch for Phase 2 (e.g., `git checkout -b phase-2-base`).
 - [ ] Confirm requirements and generate test case table (per guide Step 1). *Note: Human confirmed?*
 - [ ] Define abstract `detect` method signature per `architecture.md`: `def detect(self, df: pd.DataFrame, columns: list[str]) -> dict[str, pd.Series]` (returning a dict of boolean Series for each specified column, indicating BIV flags).
 - [ ] Red-Green-Refactor for initial tests (abstract nature, `_validate_column` errors for missing columns, and basic validation per README.md/API params like column existence in `tests/methods/test_base.py`). *Note: Cycle complete, human confirmed?*
@@ -98,6 +100,9 @@ Failure to update the plan will lead to tracking errors—treat this as a mandat
 ## Phase 3: Implement Individual Detection Methods
 
 **Objective**: Build modular detectors for 'range' and 'zscore', each in their own subdirectory. This allows easy addition of new methods (e.g., BMI) by subclassing `BaseDetector`.
+
+**Checklist**:
+- [ ] Create and switch to a branch for Phase 3 (e.g., `git checkout -b phase-3-detectors`).
 
 **Sub-Phases** (Modular: Implement one method at a time; follow `tdd_guide.md` per sub-phase):
 
@@ -139,6 +144,7 @@ Failure to update the plan will lead to tracking errors—treat this as a mandat
 - `biv/methods/__init__.py`: Add registry for detectors.
 
 **Checklist** (Follow `tdd_guide.md` for each atomic behavior, e.g., method orchestration, flag combination):
+- [ ] Create and switch to a branch for Phase 4 (e.g., `git checkout -b phase-4-detect`).
 - [ ] Confirm requirements and generate test case table for detect behaviors (multi-method support, flag naming). *Note: Human confirmed?*
 - [ ] Red-Green-Refactor for core tests in `tests/test_detect.py` (e.g., range and zscore flags, custom thresh-wave). *Note: Cycle complete?*
 - [ ] Implement registry in `biv/methods/__init__.py`. *Note: Registry tested?*
@@ -169,6 +175,7 @@ Failure to update the plan will lead to tracking errors—treat this as a mandat
 - `pyproject.toml`: Ensure `pytest-cov` and `ruff` are in dev deps.
 
 **Checklist** (Follow `tdd_guide.md` for integration tests as atomic behaviors):
+- [ ] Create and switch to a branch for Phase 5 (e.g., `git checkout -b phase-5-testing`).
 - [ ] Confirm requirements for integration tests (e.g., full pipeline). *Note: Human confirmed?*
 - [ ] Red-Green-Refactor for integration tests in `test_debiv.py` (e.g., end-to-end with sample data). *Note: Cycle complete?*
 - [ ] Fix any test failures via TDD cycles (per guide). *Note: All prior tests still pass?*
@@ -196,6 +203,7 @@ Failure to update the plan will lead to tracking errors—treat this as a mandat
 - `LICENSE`: MIT text.
 
 **Checklist** (No TDD; follow `tdd_guide.md` for quality checks):
+- [ ] Create and switch to a branch for Phase 6 (e.g., `git checkout -b phase-6-release`).
 - [ ] Write/update `README.md` with usage examples, matching conversation. *Note: Sections added.*
 - [ ] Update `pyproject.toml` with metadata, dependencies (use `[build-system]` with setuptools or hatch); include `[tool.ruff]` config if not already. Specify minimum supported versions for pandas (>=1.3.0 for groupby with numeric_only option) and numpy (>=1.21.0 for compatibility). Add python_requires = ">=3.8". *Note: Versions researched and set.*
 - [ ] Add MIT text to `LICENSE`. *Note: License file complete.*
