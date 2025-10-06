@@ -58,29 +58,40 @@ Failure to update the plan will lead to tracking errors—treat this as a mandat
 
 ## Phase 2: Implement Base Detector Interface
 
-**Objective**: Create the abstract base class for all detectors, providing shared methods like `detect`, `flag`, `remove`, and `process`. This ensures consistency and modularity—new detectors only need to implement `detect`.
+**Objective**: Create the abstract base class for all detectors providing a unified detection interface, as described in `architecture.md`. This includes initialization with method-specific configuration parameters, parameter validation interface, and unified detection signature returning boolean flags. This ensures consistency and modularity—new detectors only need to implement `detect`. Multi-column support means handling lists of columns (e.g., `['weight_kg', 'height_cm']`) as flagged in `README.md`.
 
 **Files to Modify**:
-- `biv/methods/base.py`: Add `BaseDetector` class as per conversation (with ABC, typing, etc.).
-- `tests/conftest.py`: Enhance fixtures if needed (e.g., add edge-case data).
+- `biv/methods/base.py`: Add `BaseDetector` class with abstract methods like `detect` (signature returning dict of boolean Series for specified columns), and validation helpers (with ABC, typing, etc.).
+- `tests/methods/test_base.py`: Tests for the base class behaviors.
+- `tests/conftest.py`: Enhance fixtures with edge cases (e.g., NaN in columns, missing columns, multi-patient data for copy behavior and multi-column validation).
 
-**Checklist** (Follow `tdd_guide.md` for each atomic behavior, e.g., validation, flagging):
+**Checklist** (Follow `tdd_guide.md` for each atomic behavior, per architecture.md interface contract):
 - [ ] Confirm requirements and generate test case table (per guide Step 1). *Note: Human confirmed?*
-- [ ] Red-Green-Refactor for initial tests (e.g., abstract nature, `_validate_column` errors in `tests/methods/test_base.py`). *Note: Cycle complete, human confirmed?*
-- [ ] Red-Green-Refactor for additional behaviors: NaN handling, copy behavior, multi-column support. *Note: Cycles complete?*
-- [ ] Refactor overall: Ensure docstrings match conversation; run quality checks (per guide Refactor Checklist). *Note: Linting/type checks pass?*
+- [ ] Define abstract `detect` method signature per `architecture.md`: `def detect(self, df: pd.DataFrame, columns: list[str]) -> dict[str, pd.Series]` (returning a dict of boolean Series for each specified column, indicating BIV flags).
+- [ ] Red-Green-Refactor for initial tests (abstract nature, `_validate_column` errors for missing columns, and basic validation per README.md/API params like column existence in `tests/methods/test_base.py`). *Note: Cycle complete, human confirmed?*
+- [ ] Red-Green-Refactor for additional behaviors: NaN handling (return appropriate flags for NaN values), copy behavior (do not modify original DataFrame, return a copy), multi-column support (handle lists of columns like `['weight_kg', 'height_cm']` and validate each), and edge cases (empty DataFrames, single-row data, non-numeric columns). *Note: Cycles complete?*
+- [ ] Refactor overall: Ensure docstrings and base class behavior align with `architecture.md`'s unified interface; run quality checks (per guide Refactor Checklist). *Note: Linting/type checks pass?*
 - [ ] Update `conftest.py` fixtures and move tests to permanent location if needed. *Note: Fixtures tested?*
+- [ ] Ensure final `BaseDetector` supports initialization with method-specific configs (e.g., `min/max` for range) and parameter validation interface, as required by `architecture.md`.
 
-**Dependencies**: Phase 1.
+**Dependencies**: Phase 1 (project setup and structure must be complete).
 
 **Clarifying Questions**:
 - "Should `process` allow custom columns, or always default to ['weight_kg', 'height_cm']?"
 - "Is pd.NA preferred over np.nan for replacements?"
+- "Should the base `detect` method return a DataFrame with added boolean columns or a dict of Series (to match flagging in README.md while allowing composite per method)?"
+- "Is 'copy behavior' correct as returning a copy without modifying the original DataFrame, to align with pandas immutability in the API?"
 
 **Milestones/Tests**:
 - [ ] `uv run pytest tests/methods/test_base.py` passes.
 - [ ] `uv run ruff check biv/methods/base.py` passes.
+- [ ] `uv run mypy biv/methods/base.py` passes for type checking alignment with `architecture.md`'s typing emphasis.
 - [ ] Mock subclass example in docstring works (manual verification).
+- [ ] Ensure tests cover flag-style returns (boolean Series/dict) imitating README.md's flagging output.
+
+**Upon Phase Completion**: Update all checkboxes above as [x], add summary notes (e.g., "Phase 2 done: Base ready for subclassing"), commit the updated plan, and proceed to Phase 3. *Strong Reminder: Do not skip this!*
+
+**Additional Notes**: If discrepancies arise during implementation, reference README.md's detect examples for expected flag column outputs and `architecture.md`'s registry pattern for extensibility.
 
 **Upon Phase Completion**: Update all checkboxes above as [x], add summary notes (e.g., "Phase 2 done: Base ready for subclassing"), commit the updated plan, and proceed to Phase 3. *Strong Reminder: Do not skip this!*
 
