@@ -15,7 +15,8 @@ repos:
         types: [python]
       - id: pytest
         name: pytest
-        entry: uv run pytest
+        entry: uv run pytest tests --tb=no
         language: system
-        files: \.py$
+        files: tests/.*\.py$
+        pass_filenames: false
         types: [python]

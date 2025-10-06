@@ -1,55 +1,104 @@
 from typing import Any, Dict
 
 import pandas as pd
-from pydantic import BaseModel, ValidationError, field_validator, StrictFloat
+from pydantic import BaseModel, Field, ValidationError, field_validator, StrictFloat
 
 from biv.methods.base import BaseDetector
 
 
 class RangeConfig(BaseModel):
-    min_: StrictFloat
-    max_: StrictFloat
+    """
+    Configuration for RangeDetector.
 
-    @field_validator("min_", "max_", mode="after")
+    Defines the lower and upper bounds for allowed values in a column.
+    """
+
+    lower_bound: StrictFloat = Field(
+        description="Lower bound (inclusive minimum) for allowed values."
+    )
+    upper_bound: StrictFloat = Field(
+        description="Upper bound (exclusive maximum) for allowed values."
+    )
+
+    @field_validator("lower_bound", "upper_bound", mode="after")
     @classmethod
-    def validate_min_max(cls, v: float, info: Any) -> float:
+    def validate_bounds(cls, v: float, info: Any) -> float:
+        """Validate that lower_bound < upper_bound."""
         field_name = info.field_name
-        if field_name == "min_":
-            min_val = v
-            max_val = info.data.get("max_")
-            if max_val is not None and min_val >= max_val:
-                raise ValueError("min_ must be less than max_")
-        elif field_name == "max_":
-            min_val = info.data.get("min_")
-            if min_val is not None and min_val >= v:
-                raise ValueError("min_ must be less than max_")
+        if field_name == "lower_bound":
+            lower_val = v
+            upper_val = info.data.get("upper_bound")
+            if upper_val is not None and lower_val >= upper_val:
+                raise ValueError("lower_bound must be less than upper_bound")
+        elif field_name == "upper_bound":
+            lower_val = info.data.get("lower_bound")
+            if lower_val is not None and lower_val >= v:
+                raise ValueError("lower_bound must be less than upper_bound")
         return v
 
 
 class RangeDetector(BaseDetector):
-    def __init__(self, config: Dict[str, Dict[str, float]]):
-        # Validate config using Pydantic
-        self.config = {}
+    """
+    Detector for Range-based Outliers.
+
+    Flags values as BIV if they fall outside the specified [min, max) range
+    for each column. NaN values are not flagged.
+
+    Config example:
+        {
+            "weight_kg": {"min": 30.0, "max": 200.0},
+            "height_cm": {"min": 100.0, "max": 220.0}
+        }
+    """
+
+    def __init__(self, config: Dict[str, Dict[str, float]]) -> None:
+        """
+        Initialize with range configs.
+
+        Args:
+            config: Dictionary mapping column names to min/max configs.
+                   Example: {"weight_kg": {"min": 30.0, "max": 200.0}}
+
+        Raises:
+            ValueError: If config is invalid (missing min/max, min>=max, non-float).
+        """
+        # Validate config using Pydantic, mapping user-friendly keys to internal fields
+        self.config: Dict[str, RangeConfig] = {}
         for col, params in config.items():
             try:
-                self.config[col] = RangeConfig(min_=params["min"], max_=params["max"])
+                self.config[col] = RangeConfig(
+                    lower_bound=params["min"], upper_bound=params["max"]
+                )
             except (KeyError, ValidationError) as e:
                 raise ValueError(f"Invalid config for column '{col}': {e}") from e
         self.validate_config()
 
     def validate_config(self) -> None:
+        """Validate the detector configuration."""
         # Additional validation if needed; pydantic handles main validation
         pass
 
     def detect(self, df: pd.DataFrame, columns: list[str]) -> Dict[str, pd.Series]:
+        """Detect BIVs by checking if values are outside configured ranges.
+
+        Args:
+            df: DataFrame to check.
+            columns: List of column names to check (must have configs).
+
+        Returns:
+            Dict of boolean Series, one per column, where True indicates BIV.
+
+        Raises:
+            ValueError: If column not in df or no config for column.
+        """
         results = {}
         for col in columns:
             self._validate_column(df, col)
             if col not in self.config:
                 raise ValueError(f"No range config provided for column '{col}'")
-            min_val = self.config[col].min_
-            max_val = self.config[col].max_
+            lower_val = self.config[col].lower_bound
+            upper_val = self.config[col].upper_bound
             series = df[col]
-            flags = (series < min_val) | (series > max_val)
+            flags = (series < lower_val) | (series >= upper_val)
             results[col] = flags.rename(col)
         return results
