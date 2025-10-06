@@ -132,19 +132,31 @@ Failure to update the plan will lead to tracking errors—treat this as a mandat
 
 ### Sub-Phase 3.1: RangeDetector
 **Checklist**:
-- [ ] Confirm requirements and generate test case table for RangeDetector behaviors. *Note: Human confirmed?*
-- [ ] Red-Green-Refactor for core tests in `tests/methods/test_range/test_detector.py` (e.g., `detect` for out-of-range/NaNs, `process`). *Note: Cycle complete?*
-- [ ] Implement `biv/methods/range/detector.py` (subclass `BaseDetector`, hardcoded ranges). *Note: Tests passing?*
-- [ ] Red-Green-Refactor for edge cases: Zero values, extremes, non-health columns. *Note: Cycles complete?*
-- [ ] Refactor: Add RANGES dict; run quality checks (per guide). *Note: Linting passes?*
+- [ ] Confirm requirements and generate test case table for RangeDetector behaviors with pydantic configs for type-safety and clear errors. *Note: Human confirmed?*
+- [ ] Add pydantic config model for range parameters (min/max per column). *Note: Implemented?*
+- [ ] Red-Green-Refactor for core tests in `tests/methods/test_range/test_detector.py` (e.g., `detect` for out-of-range/NaNs, config validation). *Note: Cycle complete?*
+- [ ] Implement `biv/methods/range/detector.py` (subclass `BaseDetector` with pydantic config). *Note: Tests passing?*
+- [ ] Red-Green-Refactor for edge cases: Zero values, extremes, config errors, non-health columns. *Note: Cycles complete?*
+- [ ] Refactor: Optimize for usability; run quality checks (per guide). *Note: Linting passes?*
 
 ### Sub-Phase 3.2: ZScoreDetector
 **Checklist**:
-- [ ] Confirm requirements and generate test case table for ZScoreDetector behaviors. *Note: Human confirmed?*
-- [ ] Red-Green-Refactor for core tests in `tests/methods/test_zscore/test_detector.py` (e.g., `detect` for outliers/NaNs, custom threshold). *Note: Cycle complete?*
-- [ ] Implement `biv/methods/zscore/detector.py` (subclass with threshold param). *Note: Tests passing?*
-- [ ] Red-Green-Refactor for additional cases: Insufficient data, zero variance, large datasets/mixed NaNs. *Note: Cycles complete?*
-- [ ] Refactor: Use pandas for efficiency; run quality checks (per guide). *Note: Linting passes?*
+- [ ] Confirm requirements and generate test case table for ZScoreDetector behaviors with pydantic configs. *Note: Human confirmed?*
+- [ ] Add pydantic config model for zscore parameters (threshold, group_by). *Note: Implemented?*
+- [ ] Red-Green-Refactor for core tests in `tests/methods/test_zscore/test_detector.py` (e.g., `detect` for outliers/NaNs with vectorized pandas operations for efficiency). *Note: Cycle complete?*
+- [ ] Implement `biv/methods/zscore/detector.py` (subclass `BaseDetector` with pydantic config and pandas optimization). *Note: Tests passing?*
+- [ ] Red-Green-Refactor for additional cases: Insufficient data, zero variance, large datasets/mixed NaNs, config validation. *Note: Cycles complete?*
+- [ ] Refactor: Optimize for usability with unit mismatch warnings support; run quality checks (per guide). *Note: Linting passes?*
+
+### Sub-Phase 3.3: Enhancements and Auto-Registry
+**Checklist**:
+- [ ] Implement auto-registry via introspection in `biv/methods/__init__.py` for plugin-like extensibility. *Note: Auto-discovery added?*
+- [ ] Add unit detection feature (warn on potential unit mismatches). *Note: Warnings implemented?*
+- [ ] Add progress bars option to API for large datasets. *Note: Progress bar in detect/remove?*
+- [ ] Implement DetectorPipeline for custom combination logic (beyond default OR, e.g., specific method requirements). *Note: Class added for flexibility?*
+- [ ] Support age-dependent ranges for more precise filtering. *Note: Configurable by age ranges?*
+- [ ] Red-Green-Refactor for tests on enhancements. *Note: Cycles complete?*
+- [ ] Refactor: Ensure backward compatibility; run quality checks. *Note: All pass?*
 
 **Dependencies**: Phase 2.
 
@@ -180,7 +192,7 @@ Failure to update the plan will lead to tracking errors—treat this as a mandat
 **Dependencies**: Phase 3.
 
 **Clarifying Questions**:
-- "Confirm methods dict structure combines results with OR (any method flags it)."
+- "Confirm methods dict structure combines results with OR (any method flags it); future custom combination via DetectorPipeline for e.g., requiring flags from specific methods."
 - "Should defaults be as in README examples?"
 
 **Milestones/Tests**:

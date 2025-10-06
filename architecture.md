@@ -44,8 +44,8 @@ Provides automatic registration of detection methods:
 ### Base Detector (`methods/base.py`)
 Defines the interface contract for all detection methods:
 - `BaseDetector` abstract class with standard methods
-- Initialization with method-specific configuration parameters
-- Parameter validation interface
+- Initialization with method-specific configuration parameters using Pydantic for type-safe config handling and clear validation errors
+- Parameter validation interface with Pydantic models
 - Unified detection signature returning boolean flags
 
 ### Detection Methods
@@ -64,9 +64,9 @@ Adding a new detection method requires minimal changes to the core system:
    - Define initialization and validation logic
    - Implement the `detect()` method
 
-2. **Register the method** in `methods/__init__.py`
-   - Add import for the new detector class
-   - Update the `DETECTOR_REGISTRY` dictionary
+2. **The method is auto-registered** via introspection in `methods/__init__.py`
+   - Automatic discovery of detector classes inheriting from `BaseDetector`
+   - No manual registry update required
 
 That's it—the core system remains unchanged, and the new method is automatically available via the public API.
 
@@ -91,6 +91,7 @@ Configuration flows from the user through the API layer to individual detectors:
 The test structure mirrors the source code organization:
 - `test_api.py`: Tests end-to-end API behavior and orchestration
 - `test_[method_name]/test_detector.py`: Method-specific unit tests
+- Performance profiling tests for scalability and efficiency
 - Ensures changes to individual methods don't break integration
 
 ## Design Principles

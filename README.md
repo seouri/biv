@@ -150,9 +150,21 @@ print(flagged_pediatric_data)
 # 3         102          3        100.0           92                        True                       False
 ```
 
+By default, when multiple detection methods are used, their flags are combined using logical OR: a value is flagged as BIV if any method detects it as such. Future enhancements may allow custom combination logic, such as requiring flags from specific methods or using AND combinations.
+
+## Unit Handling Warnings
+
+The package currently assumes input numeric columns (weight, height) are in standard units (kg/cm). Mismatched units (e.g., weight in lbs, height in inches) can lead to incorrect range checks and z-score calculations. To handle this:
+
+- Ensure data consistency before use.
+- Standardize to kg/cm if possible.
+- Watch for warnings in development (future feature) about potential unit mismatches.
+
+For cross-checking, consider if detection results align with expected outliers for healthy population ranges.
+
 ## API Reference
 
-### `biv.detect(dataframe, methods, patient_id_col='patient_id', age_col='age', sex_col='sex', weight_col='weight_kg', height_col='height_cm', flag_suffix='_biv_flag')`
+### `biv.detect(dataframe, methods, patient_id_col='patient_id', age_col='age', sex_col='sex', weight_col='weight_kg', height_col='height_cm', flag_suffix='_biv_flag', progress_bar=False)`
 
 Identifies BIVs and returns a DataFrame with added boolean flag columns.
 
@@ -172,6 +184,8 @@ Identifies BIVs and returns a DataFrame with added boolean flag columns.
     
 - **`flag_suffix`** (str): The suffix for the new boolean flag columns.
     
+- **`progress_bar`** (bool, default False): Whether to display a progress bar during processing.
+
 
 **Returns**: A `pandas.DataFrame` with added flag columns indicating BIVs.
 
