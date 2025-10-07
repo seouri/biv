@@ -182,11 +182,16 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 | TC023 | Detect values at exact lower bound | val=min, config min=10 max=100 | [False] | No |
 | TC024 | Detect with negative ranges and values | df['col']=[-5, 10], config min=-10 max=20 | [False, False] | Yes |
 | TC025 | Detect with integer values in df | df['col']=[10, 20], config min=15 max=25 | [True, False] | Yes |
-| TC036 | Config validation raises for age config with min/max keys | Age config with forbidden min/max keys | ValueError | Yes |
-| TC037 | Config validation raises for flat config with age_brackets key | Flat config with forbidden age_brackets key | ValueError | Yes |
-| TC038 | Config validation raises for age bracket with value min > max | Age bracket {'min_age':0, 'max_age':10, 'min':80, 'max':50} | ValidationError | Yes |
-| TC039 | Config validation raises for age bracket with min_age > max_age | Age bracket {'min_age':10, 'max_age':5, 'min':30, 'max':50} | ValidationError | Yes |
-| TC040 | Age-dependent range with no matching age brackets (mask.any() False) | Ages outside bracket ranges | No flagging | Yes |
+| TC026 | Age-dependent range applies different min/max per age | df with age, config min/max by age brackets | Flags based on age-specific ranges | No |
+| TC027 | Age-dependent range raises error for invalid brackets | Overlapping age brackets | ValueError("Overlapping age brackets") | Yes |
+| TC028 | Age-dependent range flags based on age-specific ranges | df with age, config with different ranges | Flags based on age-specific ranges | No |
+| TC029 | Age-dependent range missing age col raises | df without age col | ValueError("Age column 'age' does not exist in DataFrame") | Yes |
+| TC030 | Age-dependent range works with nan age | df with nan in age | Flags False for nan age | No |
+| TC031 | Config validation raises for age config with min/max keys | Age config with forbidden min/max keys | ValueError | Yes |
+| TC032 | Config validation raises for flat config with age_brackets key | Flat config with forbidden age_brackets key | ValueError | Yes |
+| TC033 | Config validation raises for age bracket with value min > max | Age bracket {'min_age':0, 'max_age':10, 'min':80, 'max':50} | ValidationError | Yes |
+| TC034 | Config validation raises for age bracket with min_age > max_age | Age bracket {'min_age':10, 'max_age':5, 'min':30, 'max':50} | ValidationError | Yes |
+| TC035 | Age-dependent range with no matching age brackets | Ages outside bracket ranges | No flagging | Yes |
 
 ### Sub-Phase 3.2: Enhancements and Auto-Registry
 
@@ -226,13 +231,13 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 | TC006 | DetectorPipeline OR combination | flags_df = [{'col': [True,False]}, {'col': [False,True]}] | [True, True] | No |
 | TC007 | DetectorPipeline AND combination | flags_df = [{'col': [True,True]}, {'col': [False,True]}] | [False, True] | No |
 | TC008 | DetectorPipeline raises KeyError for invalid logic | logic='XOR' | KeyError("Unsupported combination logic 'XOR'") | Yes |
-| TC038 | DetectorPipeline handles empty flags list | [] | {} (empty dict) | Yes |
-| TC039 | DetectorPipeline multiple columns OR logic | multi-col flags | OR combined per column | No |
-| TC040 | DetectorPipeline multiple columns AND logic | multi-col flags | AND combined per column | No |
-| TC009 | Age-dependent range applies different min/max per age | df with age, config min/max by age brackets | Flags based on age-specific ranges | No |
-| TC010 | Age-dependent range raises error for invalid brackets | overlapping age brackets | ValueError("Overlapping age brackets") | Yes |
-| TC011 | Registry introspection excludes new classes if not BaseDetector subclass | Class not subclassing BaseDetector | Not in registry | Yes |
-| TC012 | Warnings for zero variance in zscore (if implemented) | group with all same values | UserWarning("Zero variance in group for zscore") | Yes |
+| TC009 | DetectorPipeline handles empty flags list | [] | {} (empty dict) | Yes |
+| TC010 | DetectorPipeline multiple columns OR logic | multi-col flags | OR combined per column | No |
+| TC011 | DetectorPipeline multiple columns AND logic | multi-col flags | AND combined per column | No |
+| TC012 | Age-dependent range applies different min/max per age | df with age, config min/max by age brackets | Flags based on age-specific ranges | No |
+| TC013 | Age-dependent range raises error for invalid brackets | overlapping age brackets | ValueError("Overlapping age brackets") | Yes |
+| TC014 | Registry introspection excludes new classes if not BaseDetector subclass | Class not subclassing BaseDetector | Not in registry | Yes |
+| TC015 | Warnings for zero variance in zscore (if implemented) | group with all same values | UserWarning("Zero variance in group for zscore") | Yes |
 
 **Checklist**:
 - [x] Confirm requirements and generate test case table for enhancements (auto-registry via introspection, unit warnings, progress bars, etc.). *Note: Reordered for foundation before ZScore; dependencies updated.*

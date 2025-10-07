@@ -206,7 +206,7 @@ class TestRangeDetector:
         expected = pd.Series([True, False], name="col")
         pd.testing.assert_series_equal(result["col"], expected)
 
-    def test_tc009_age_dependent_range_applies_different_min_max_per_age(self) -> None:
+    def test_tc026_age_dependent_range_applies_different_min_max_per_age(self) -> None:
         df = pd.DataFrame(
             {
                 "age": [5, 15, 25],
@@ -229,7 +229,7 @@ class TestRangeDetector:
         expected = pd.Series([False, False, False], name="weight_kg")
         pd.testing.assert_series_equal(result["weight_kg"], expected)
 
-    def test_tc010_age_dependent_range_raises_error_for_invalid_brackets_overlapping(
+    def test_tc027_age_dependent_range_raises_error_for_invalid_brackets_overlapping(
         self,
     ) -> None:
         config = {

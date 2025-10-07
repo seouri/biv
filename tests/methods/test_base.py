@@ -7,12 +7,12 @@ from biv.methods.base import BaseDetector
 from typing import Dict
 
 
-def test_instantiating_base_detector_raises_type_error() -> None:
+def test_tc001_instantiating_base_detector_raises_type_error() -> None:
     with pytest.raises(TypeError):
         BaseDetector()  # type: ignore[abstract]
 
 
-def test_subclass_without_detect_raises_type_error() -> None:
+def test_tc002_subclass_without_detect_raises_type_error() -> None:
     class Concrete(BaseDetector):
         pass
 
@@ -20,7 +20,7 @@ def test_subclass_without_detect_raises_type_error() -> None:
         Concrete()  # type: ignore[abstract]
 
 
-def test_validate_column_passes_for_existing_column() -> None:
+def test_tc003_validate_column_passes_for_existing_column() -> None:
     class Concrete(BaseDetector):
         def validate_config(self) -> None:
             pass
@@ -37,7 +37,7 @@ def test_validate_column_passes_for_existing_column() -> None:
         pytest.fail("Validation should not raise ValueError for existing column")
 
 
-def test_detect_validates_multiple_columns() -> None:
+def test_tc004_detect_validates_multiple_columns() -> None:
     class Concrete(BaseDetector):
         def validate_config(self) -> None:
             pass
@@ -59,7 +59,7 @@ def test_detect_validates_multiple_columns() -> None:
         detector.detect(df, ["col1", "missing"])
 
 
-def test_initialization_accepts_method_specific_configs() -> None:
+def test_tc005_initialization_accepts_method_specific_configs() -> None:
     class Concrete(BaseDetector):
         def __init__(self, min_val: int = 0, max_val: int = 100) -> None:
             super().__init__()
@@ -77,7 +77,7 @@ def test_initialization_accepts_method_specific_configs() -> None:
     assert detector.max_val == 200
 
 
-def test_validate_config_raises_for_invalid_configs() -> None:
+def test_tc006_detect_validates_multiple_columns() -> None:
     class Concrete(BaseDetector):
         def __init__(self, min_val: int = 0, max_val: int = 100) -> None:
             super().__init__()
