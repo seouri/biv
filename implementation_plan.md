@@ -16,15 +16,29 @@ This document outlines a modular, phased implementation plan for the `biv` Pytho
 - PEP 8 compliance and clean code (enforced via Ruff for linting and formatting).
 - Ready for PyPI distribution (via `pyproject.toml` with `uv` for management).
 
+**MANDATORY AI Agent Instructions: Execution Notes and Git Workflow**
+- Git Versioning and Branching:
+  - **MANDATORY**: Work on a separate git branch for each phase (e.g., `git checkout -b phase-1-setup`).
+  - Before starting any phase, create and switch to the new branch.
+  - Work only on the branch to prevent regression.
+  - After completing the phase (all checkboxes [x] and human confirmation), commit all changes including the updated plan, merge back to main (e.g., via pull request if using collaboration), and delete the branch.
+  - All commits must be on the phase-specific branch.
+- Quality Checks and Validation:
+  - After each task/phase, run `uv run pytest`, `uv run ruff check .` (lint), and `uv run ruff format .` (format).
+  - If issues arise, revert to TDD cycle per `tdd_guide.md`; use `uv run ruff check --fix` for quick fixes.
+  - Final Validation: Match conversation examples exactly; run full suite before declaring done.
+- Plan Updates and Confirmation:
+  - **MANDATORY**: Immediately update `implementation_plan.md` file after **every single task** (Red-Green-Refactor cycle or phase completion) and obtain **human confirmation**.
+  - Mark checkboxes as `- [x]`, add brief notes (e.g., "Completed: TDD cycle for X; human confirmed; quality checks passed; committed").
+  - Log any deviations or clarifications resolved here.
+  - Failure to update the plan will lead to tracking errors.
+  - No commits without human confirmation after each cycle.
+  - Commits must never bypass pre-commit hooks (e.g., no `git commit --no-verify`).
+  - All quality checks must pass before committing.
+
 The plan is phased for modularity: Start high-level, drill into details. Each phase is presented as a **checklist** for clear progress tracking. Use markdown checkboxes (`- [ ]` for todo, `- [x]` for done) to mark completion.
 
-**STRONG INSTRUCTION ON UPDATING THIS PLAN AND GIT WORKFLOW**: **MANDATORY: Work on a separate git branch for each phase.** Before starting any phase, create and switch to a new branch (e.g., `git checkout -b phase-2-base`). Work only prevents regression on this branch. After completing the phase (all checkboxes [x] and human confirmation), commit all changes including the updated plan, merge back to main (e.g., via pull request if using collaboration), and delete the branch.
 
-After completing **each full TDD cycle** (Red-Green-Refactor) and obtaining **human confirmation**, **immediately update this `implementation_plan.md` file on the branch** by:
-- Marking the relevant checkbox as `- [x]`.
-- Adding a brief note under the task (e.g., "Completed: TDD cycle for X; human confirmed; quality checks passed; committed").
-- Running a full validation (e.g., `uv run pytest` and `uv run ruff check .`).
-Failure to update the plan will lead to tracking errors—treat this as a mandatory step before proceeding. No commits without human confirmation after each cycle. Commits must never bypass pre-commit hooks (e.g., no `git commit --no-verify`). All quality checks must pass before attempting to commit. All commits must be on the phase-specific branch.
 
 **Tooling Note**: This plan uses `uv` (from Astral) for fast dependency resolution, installation, and virtual environment management. Initialize with `uv init` for the project, use `uv add` for dependencies, and `uv sync` for locking the environment. All `pip` commands are replaced with `uv` equivalents. Ruff is integrated for linting and formatting (replacing tools like flake8, black, and isort) to ensure code quality. Follow `tdd_guide.md` for full setup (e.g., pre-commit, mypy).
 
@@ -277,10 +291,3 @@ Failure to update the plan will lead to tracking errors—treat this as a mandat
 - [ ] `uv run ruff check .` passes with no issues.
 
 **Upon Phase Completion**: Update all checkboxes above as [x], add summary notes (e.g., "Phase 6 done: Package release-ready"), commit the updated plan. *Project Complete: Celebrate and prepare for PyPI upload! Strong Reminder: Do not skip this!*
-
-**Overall Execution Notes**:
-- Use Git for versioning; branch per phase (e.g., `git checkout -b phase-1-setup`).
-- After each task/phase, run `uv run pytest`, `uv run ruff check .` (lint), and `uv run ruff format .` (format).
-- If issues arise, revert to TDD cycle per `tdd_guide.md`; use `uv run ruff check --fix` for quick fixes.
-- **MANDATORY**: Update `implementation_plan.md` after **every single task** to maintain accurate progress tracking. Log any deviations or clarifications resolved here.
-- Final Validation: Match conversation examples exactly; run full suite before declaring done.
