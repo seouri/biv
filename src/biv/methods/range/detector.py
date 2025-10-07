@@ -99,6 +99,6 @@ class RangeDetector(BaseDetector):
             lower_val = self.config[col].lower_bound
             upper_val = self.config[col].upper_bound
             series = df[col]
-            flags = (series < lower_val) | (series >= upper_val)
+            flags = (series < lower_val) | (series > upper_val)
             results[col] = flags.rename(col)
         return results

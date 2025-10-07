@@ -129,3 +129,13 @@ class TestRangeDetector:
         detector = RangeDetector(config)  # type: ignore
         detector.detect(sample_df, ["weight_kg"])
         pd.testing.assert_frame_equal(sample_df, df_original)
+
+    def test_tc016_detect_upper_bound_exclusive(self) -> None:
+        """Test that upper bound is exclusive: values equal to max are not flagged."""
+        df = pd.DataFrame({"col": [50.0, 100.0, 150.0]})  # type: ignore
+        config = {"col": {"min": 0.0, "max": 100.0}}  # type: ignore
+        detector = RangeDetector(config)  # type: ignore
+        result = detector.detect(df, ["col"])
+        # 50.0 is in range, 100.0 == max (not flagged), 150.0 > max (flagged)
+        expected = pd.Series([False, False, True], name="col")
+        pd.testing.assert_series_equal(result["col"], expected)
