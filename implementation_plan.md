@@ -143,7 +143,7 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 **Checklist**:
 - [ ] Create and switch to a branch for Phase 3 (e.g., `git checkout -b phase-3-detectors`).
 
-**Sub-Phases** (Modular: Implement one method at a time; follow `tdd_guide.md` per sub-phase):
+**Sub-Phases** (Modular: Complete with RangeDetector done and Enhancements next; ZScore moved to separate Phase 4.):
 
 ### Sub-Phase 3.1: RangeDetector
 **Checklist**:
@@ -185,70 +185,113 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 | TC024 | Detect with negative ranges and values | df['col']=[-5, 10], config min=-10 max=20 | [False, False] | Yes |
 | TC025 | Detect with integer values in df | df['col']=[10, 20], config min=15 max=25 | [True, False] | Yes |
 
-### Sub-Phase 3.2: ZScoreDetector
-**Checklist**:
-- [ ] Confirm requirements and generate test case table for ZScoreDetector behaviors with pydantic configs. *Note: Human confirmed?*
-- [ ] Add pydantic config model for zscore parameters (threshold, group_by). *Note: Implemented?*
-- [ ] Red-Green-Refactor for core tests in `tests/methods/test_zscore/test_detector.py` (e.g., `detect` for outliers/NaNs with vectorized pandas operations for efficiency). *Note: Cycle complete?*
-- [ ] Implement `biv/methods/zscore/detector.py` (subclass `BaseDetector` with pydantic config and pandas optimization). *Note: Tests passing?*
-- [ ] Red-Green-Refactor for additional cases: Insufficient data, zero variance, large datasets/mixed NaNs, config validation. *Note: Cycles complete?*
-- [ ] Refactor: Optimize for usability with unit mismatch warnings support; run quality checks (per guide). *Note: Linting passes?*
+### Sub-Phase 3.2: Enhancements and Auto-Registry
+**Confirmed Requirements for Auto-Registry:**
+- Auto-registry via introspection in `biv/methods/__init__.py` for plugin-like extensibility.
+- Method names derived from class names (e.g., 'range' from 'RangeDetector', 'zscore' from 'ZscoreDetector').
+- Registry provides mapping from method name string to detector class.
+- Excludes abstract BaseDetector from discovery.
+- Raises KeyError or similar for unknown methods.
+- Enables dynamic discovery without manual updates, by collecting BaseDetector subclasses.
 
-### Sub-Phase 3.3: Enhancements and Auto-Registry
-**Checklist**:
-- [ ] Implement auto-registry via introspection in `biv/methods/__init__.py` for plugin-like extensibility. *Note: Auto-discovery added?*
-- [ ] Add unit detection feature (warn on potential unit mismatches). *Note: Warnings implemented?*
-- [ ] Add progress bars option to API for large datasets. *Note: Progress bar in detect/remove?*
-- [ ] Implement DetectorPipeline for custom combination logic (beyond default OR, e.g., specific method requirements). *Note: Class added for flexibility?*
-- [ ] Support age-dependent ranges for more precise filtering. *Note: Configurable by age ranges?*
-- [ ] Red-Green-Refactor for tests on enhancements. *Note: Cycles complete?*
-- [ ] Refactor: Ensure backward compatibility; run quality checks. *Note: All pass?*
+**Confirmed Test Case Table for Auto-Registry:**
 
-**Dependencies**: Phase 2.
+| Test Case ID | Description | Input | Expected Output | Edge Case? |
+|--------------|-------------|-------|-----------------|------------|
+| TC001 | Registry available methods include known detectors | None | 'range' in registry.keys() | No |
+| TC002 | Registry returns detector class for known method | 'range' | <class 'RangeDetector'> | No |
+| TC003 | Registry raises KeyError for unknown method | 'unknown' | KeyError("Method 'unknown' not found") | Yes |
+| TC004 | Registry excludes BaseDetector (no 'basedetector' key) | Check 'basedetector' not in registry | True | No |
+| TC005 | Registry discovers multiple methods when available | After zscore implemented | 'zscore' in registry | No |
+
+**Checklist**:
+- [x] Confirm requirements and generate test case table for enhancements (auto-registry via introspection, unit warnings, progress bars, etc.). *Note: Reordered for foundation before ZScore; dependencies updated.*
+- [x] Implement auto-registry via introspection in `biv/methods/__init__.py` for plugin-like extensibility (enables dynamic discovery without manual updates, per architecture.md). *Note: Auto-discovery mechanism implemented using BaseDetector.__subclasses__(), mapping class names to lowercase method names (e.g., RangeDetector -> 'range'); registry accessible as dict from biv.methods.registry; 5/5 tests pass; quality checks pass.*
+- [ ] Add unit detection feature (warn on potential unit mismatches, e.g., lbs vs kg) in API layer. *Note: Warnings for user awareness on potential measurement issues.*
+- [ ] Add progress bars option to API for large datasets (via tqdm or similar). *Note: Optional progress tracking in detect/remove.*
+- [ ] Implement DetectorPipeline for custom combination logic (beyond default OR, e.g., requiring flags from specific methods or AND operations). *Note: Class for flexible flag combination strategies.*
+- [ ] Support age-dependent ranges for more precise filtering (optional enhancement, configurable by age brackets). *Note: Extend range configs to support age thresholds.*
+- [ ] Red-Green-Refactor for tests on enhancements (test registry introspection, warnings, pipeline logic). *Note: Cycles complete?*
+- [ ] Refactor: Ensure backward compatibility with existing range; run quality checks. *Note: All pass?*
+
+**Dependencies**: Phase 2 (BaseDetector complete).
+
+**Dependencies**: Phase 3 (enhancements complete for auto-registry).
 
 **Clarifying Questions**:
 - For Range: "Confirm ranges: weight 30-200 kg, height 100-250 cm?"
 - For ZScore: "Should threshold be fixed at 3, or init-param only?"
+- Enhancements: "Confirm auto-registry should exclude abstract BaseDetector from discovery?"
 
 **Milestones/Tests**:
 - [ ] `uv run pytest tests/methods/test_range/` and `test_zscore/` pass independently.
 - [ ] `uv run ruff check biv/methods/` passes.
 
-**Upon Phase Completion**: Update all checkboxes above as [x], add summary notes (e.g., "Phase 3 done: Both detectors functional"), commit the updated plan, and proceed to Phase 4. *Strong Reminder: Do not skip this!*
+**Upon Phase Completion**: Update all checkboxes above as [x], add summary notes (e.g., "Phase 3 done: Range and Enhancements functional; ZScore elevated"), commit the updated plan, and proceed to Phase 4. *Strong Reminder: Do not skip this!*
 
-## Phase 4: Implement biv.detect() Function
+## Phase 4: ZScoreDetector
 
-**Objective**: Build biv.detect() to annotate the input DataFrame with boolean flag columns for BIVs using the specified methods, as per README.md API.
+**Objective**: Implement ZScoreDetector as a separate phase for its statistical complexity, utilizing auto-registry from Phase 3 enhancements. This involves group-based z-score outlier detection optimized with pandas vectorized operations, per architecture.md and README.md.
+
+**Files to Modify**:
+- `biv/methods/zscore/detector.py`: Subclass `BaseDetector` with pydantic config and detection logic.
+- `tests/methods/test_zscore/test_zscore_detector.py`: Comprehensive tests covering core, edges, and pandas optimizations.
+- `tests/conftest.py`: Additional fixtures for z-score specific edge cases (e.g., zero variance groups, mixed NaNs).
+
+**Checklist** (Follow `tdd_guide.md` for each atomic behavior, per architecture.md interface contract and README.md zscore method):
+- [ ] Create and switch to a branch for Phase 4 (e.g., `git checkout -b phase-4-zscore`).
+- [ ] Confirm requirements and generate test case table for ZScoreDetector behaviors with pydantic configs (threshold, group_by). *Note: Human confirmed; config dict for threshold (float), group_by (list[str]), detection flags outliers beyond z-score threshold within groups.*
+- [ ] Add pydantic config model for zscore parameters (threshold, group_by, with defaults from README.md). *Note: ZScoreConfig model with StrictFloat for threshold >0, and List[StrictStr] for group_by.*
+- [ ] Red-Green-Refactor for core tests in `tests/methods/test_zscore/test_zscore_detector.py` (e.g., `detect` for z-score outliers with groupby, handling NaNs as False). *Note: Cycle complete; wrote failing tests, implemented detect using (z = (grp_series - grp_mean) / grp_std, abs(z) > threshold), vectorized.*
+- [ ] Implement `biv/methods/zscore/detector.py` (subclass `BaseDetector` with pydantic config and pandas groupby optimizations). *Note: Tests passing? Core detect logic complete.*
+- [ ] Red-Green-Refactor for additional cases: Insufficient data (min 2 per group for std), zero variance (warn/error?), large datasets/mixed NaNs, config validation. *Note: Cycles complete; edge tests for small groups, all same values, nan groups, config errors (threshold <=0, invalid group_by).*
+- [ ] Integrate unit warnings from Phase 3 (if implemented) for potential kg/cm mismatches. *Note: Optional link to enhancements for future warnings on z-score anomalies.*
+- [ ] Refactor: Optimize for performance with pandas: groupby.transform(lambda x: (x - x.mean()) / x.std()), handle NaNs properly; run quality checks. *Note: Linting passes.*
+
+**Dependencies**: Phase 3 (enhancements, including auto-registry for easy integration).
+
+**Clarifying Questions**:
+- For ZScore: "Should threshold be fixed at 3, or init-param only?"
+
+**Milestones/Tests**:
+- [ ] `uv run pytest tests/methods/test_zscore/test_zscore_detector.py` passes.
+- [ ] `uv run ruff check biv/methods/zscore/detector.py` passes.
+
+**Upon Phase Completion**: Update all checkboxes above as [x], add summary notes (e.g., "Phase 4 done: ZScoreDetector ready"), commit the updated plan, and proceed to Phase 5. *Strong Reminder: Do not skip this!*
+
+## Phase 5: Implement biv.detect() Function
+
+**Objective**: Build biv.detect() to annotate the input DataFrame with boolean flag columns for BIVs using the specified methods, as per README.md API. Integrates with auto-registry from Phase 3 and ZScoreDetector from Phase 4.
 
 **Files to Modify**:
 - `biv/api.py`: Add detect function with orchestrator logic (as per architecture.md).
 - `biv/__init__.py`: Expose detect.
-- `biv/methods/__init__.py`: Add registry for detectors.
+- `biv/methods/__init__.py`: Complete registry from Phase 3 for detector discovery.
 
 **Checklist** (Follow `tdd_guide.md` for each atomic behavior, e.g., method orchestration, flag combination):
-- [ ] Create and switch to a branch for Phase 4 (e.g., `git checkout -b phase-4-detect`).
-- [ ] Confirm requirements and generate test case table for detect behaviors (multi-method support, flag naming). *Note: Human confirmed?*
-- [ ] Red-Green-Refactor for core tests in `tests/test_detect.py` (e.g., range and zscore flags, custom thresh-wave). *Note: Cycle complete?*
-- [ ] Implement registry in `biv/methods/__init__.py`. *Note: Registry tested?*
-- [ ] Implement `detect` in `biv/api.py` minimally. *Note: Core tests passing?*
-- [ ] Red-Green-Refactor for additional tests: Custom suffixes/columns, both methods combined. *Note: Cycles complete?*
-- [ ] Refactor: Match README params/docstrings; run quality checks (per guide). *Note: Linting passes?*
+- [ ] Create and switch to a branch for Phase 5 (e.g., `git checkout -b phase-5-detect`).
+- [ ] Confirm requirements and generate test case table for detect behaviors (multi-method support with range and zscore, flag naming, OR combination). *Note: Human confirmed; defaults to OR, flag suffix '_biv_flag', customizable columns.*
+- [ ] Red-Green-Refactor for core tests in `tests/test_api.py` (e.g., range only, then zscore only, combined). *Note: Cycle complete; orchestrate detectors via registry, collect flags, combine with OR.*
+- [ ] Implement registry integration in `biv/methods/__init__.py` to instantiate detectors by name. *Note: Registry returns detector class instances for given configs.*
+- [ ] Implement `detect` in `biv/api.py` with defaults, handling config parsing and adding flag columns. *Note: Core tests passing; returns new df with added boolean columns.*
+- [ ] Red-Green-Refactor for multi-method, custom params, edge cases. *Note: Cycles complete; handle empty methods, invalid names, progress_bar, suffixes.*
+- [ ] Refactor: Match README params/docstrings; quality checks pass. *Note: Linting and mypy ok.*
 - [ ] Update `__init__.py` to expose detect. *Note: Import works.*
 
-**Dependencies**: Phase 3.
+**Dependencies**: Phase 4 (ZScoreDetector complete for full integration).
 
 **Clarifying Questions**:
-- "Confirm methods dict structure combines results with OR (any method flags it); future custom combination via DetectorPipeline for e.g., requiring flags from specific methods."
-- "Should defaults be as in README examples?"
+- "ShouldCombination default to OR, with future support for custom via DetectorPipeline (Phase 3 enhancement)?"
+- "Confirm flag suffix default '_biv_flag', customizable?"
 
 **Milestones/Tests**:
-- [ ] `uv run pytest tests/test_detect.py` passes.
+- [ ] `uv run pytest tests/test_api.py` passes.
 - [ ] `uv run ruff check biv/api.py` passes.
-- [ ] Example usage matches README detect section.
+- [ ] Examples match README.md detect section.
 
-**Upon Phase Completion**: Update all checkboxes above as [x], add summary notes (e.g., "Phase 4 done: detect function ready"), commit the updated plan, and proceed to Phase 5. *Strong Reminder: Do not skip this!*
+**Upon Phase Completion**: Update all checkboxes as [x], summary notes (e.g., "Phase 5 done: detect function complete"), proceed to Phase 6.
 
-## Phase 5: Comprehensive Testing and Coverage
+## Phase 6: Comprehensive Testing and Coverage
 
 **Objective**: Ensure robustness with full test suite, including integration tests.
 
@@ -257,14 +300,14 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 - `pyproject.toml`: Ensure `pytest-cov` and `ruff` are in dev deps.
 
 **Checklist** (Follow `tdd_guide.md` for integration tests as atomic behaviors):
-- [ ] Create and switch to a branch for Phase 5 (e.g., `git checkout -b phase-5-testing`).
+- [ ] Create and switch to a branch for Phase 6 (e.g., `git checkout -b phase-6-testing`).
 - [ ] Confirm requirements for integration tests (e.g., full pipeline). *Note: Human confirmed?*
 - [ ] Red-Green-Refactor for integration tests in `test_debiv.py` (e.g., end-to-end with sample data). *Note: Cycle complete?*
 - [ ] Fix any test failures via TDD cycles (per guide). *Note: All prior tests still pass?*
 - [ ] Verify coverage: Run `uv run pytest --cov=biv` (aim >90% per guide). *Note: Coverage % achieved.*
 - [ ] Run `uv run ruff check tests/` to lint tests. *Note: Test linting passes?*
 
-**Dependencies**: Phase 4.
+**Dependencies**: Phase 5 (detect function complete for end-to-end testing).
 
 **Clarifying Questions**:
 - "Any specific test frameworks beyond pytest?"
@@ -273,9 +316,9 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 - [ ] `uv run pytest --cov=biv` >90%.
 - [ ] `uv run ruff check .` passes project-wide.
 
-**Upon Phase Completion**: Update all checkboxes above as [x], add summary notes (e.g., "Phase 5 done: Coverage at 95%"), commit the updated plan, and proceed to Phase 6. *Strong Reminder: Do not skip this!*
+**Upon Phase Completion**: Update all checkboxes above as [x], add summary notes (e.g., "Phase 6 done: Coverage at 95%"), commit the updated plan, and proceed to Phase 7. *Strong Reminder: Do not skip this!*
 
-## Phase 6: Documentation, Packaging, and Release Prep
+## Phase 7: Documentation, Packaging, and Release Prep
 
 **Objective**: Finalize for distribution.
 
@@ -285,7 +328,7 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 - `LICENSE`: MIT text.
 
 **Checklist** (No TDD; follow `tdd_guide.md` for quality checks):
-- [ ] Create and switch to a branch for Phase 6 (e.g., `git checkout -b phase-6-release`).
+- [ ] Create and switch to a branch for Phase 7 (e.g., `git checkout -b phase-7-release`).
 - [ ] Write/update `README.md` with usage examples, matching conversation. *Note: Sections added.*
 - [ ] Update `pyproject.toml` with metadata, dependencies (use `[build-system]` with setuptools or hatch); include `[tool.ruff]` config if not already. Specify minimum supported versions for pandas (>=1.3.0 for groupby with numeric_only option) and numpy (>=1.21.0 for compatibility). Add python_requires = ">=3.8". *Note: Versions researched and set.*
 - [ ] Add MIT text to `LICENSE`. *Note: License file complete.*
@@ -293,7 +336,7 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 - [ ] Build: Run `uv build` for wheels/sdists. *Note: Artifacts created?*
 - [ ] Lint final: Run `uv run ruff check . --fix` to auto-fix issues. *Note: No remaining issues?*
 
-**Dependencies**: Phase 5.
+**Dependencies**: Phase 6.
 
 **Clarifying Questions**:
 - "Target Python versions? PyPI name?"
@@ -302,4 +345,4 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 - [ ] Local install works (`uv run python -c "import biv"`); docs match code.
 - [ ] `uv run ruff check .` passes with no issues.
 
-**Upon Phase Completion**: Update all checkboxes above as [x], add summary notes (e.g., "Phase 6 done: Package release-ready"), commit the updated plan. *Project Complete: Celebrate and prepare for PyPI upload! Strong Reminder: Do not skip this!*
+**Upon Phase Completion**: Update all checkboxes above as [x], add summary notes (e.g., "Phase 7 done: Package release-ready"), commit the updated plan. *Project Complete: Celebrate and prepare for PyPI upload! Strong Reminder: Do not skip this!*
