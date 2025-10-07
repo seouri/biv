@@ -185,10 +185,27 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 | TC024 | Detect with negative ranges and values | df['col']=[-5, 10], config min=-10 max=20 | [False, False] | Yes |
 | TC025 | Detect with integer values in df | df['col']=[10, 20], config min=15 max=25 | [True, False] | Yes |
 
-### Sub-Phase 3.2: Enhancements and Auto-Registry
+**Confirmed Requirements for Auto-Registry:**
+- Auto-registry via introspection in `biv/methods/__init__.py` for plugin-like extensibility.
+- Method names derived from class names (e.g., 'range' from 'RangeDetector', 'zscore' from 'ZscoreDetector').
+- Registry provides mapping from method name string to detector class.
+- Excludes abstract BaseDetector from discovery.
+- Raises KeyError or similar for unknown methods.
+- Enables dynamic discovery without manual updates, by collecting BaseDetector subclasses.
+
+**Confirmed Test Case Table for Auto-Registry:**
+
+| Test Case ID | Description | Input | Expected Output | Edge Case? |
+|--------------|-------------|-------|-----------------|------------|
+| TC001 | Registry available methods include known detectors | None | 'range' in registry.keys() | No |
+| TC002 | Registry returns detector class for known method | 'range' | <class 'RangeDetector'> | No |
+| TC003 | Registry raises KeyError for unknown method | 'unknown' | KeyError("Method 'unknown' not found") | Yes |
+| TC004 | Registry excludes BaseDetector (no 'basedetector' key) | Check 'basedetector' not in registry | True | No |
+| TC005 | Registry discovers multiple methods when available | After zscore implemented | 'zscore' in registry | No |
+
 **Checklist**:
-- [ ] Confirm requirements and generate test case table for enhancements (auto-registry via introspection, unit warnings, progress bars, etc.). *Note: Reordered for foundation before ZScore; dependencies updated.*
-- [ ] Implement auto-registry via introspection in `biv/methods/__init__.py` for plugin-like extensibility (enables dynamic discovery without manual updates, per architecture.md). *Note: Auto-discovery mechanism to register detectors subclassing BaseDetector.*
+- [x] Confirm requirements and generate test case table for enhancements (auto-registry via introspection, unit warnings, progress bars, etc.). *Note: Reordered for foundation before ZScore; dependencies updated.*
+- [x] Implement auto-registry via introspection in `biv/methods/__init__.py` for plugin-like extensibility (enables dynamic discovery without manual updates, per architecture.md). *Note: Auto-discovery mechanism implemented using BaseDetector.__subclasses__(), mapping class names to lowercase method names (e.g., RangeDetector -> 'range'); registry accessible as dict from biv.methods.registry; 5/5 tests pass; quality checks pass.*
 - [ ] Add unit detection feature (warn on potential unit mismatches, e.g., lbs vs kg) in API layer. *Note: Warnings for user awareness on potential measurement issues.*
 - [ ] Add progress bars option to API for large datasets (via tqdm or similar). *Note: Optional progress tracking in detect/remove.*
 - [ ] Implement DetectorPipeline for custom combination logic (beyond default OR, e.g., requiring flags from specific methods or AND operations). *Note: Class for flexible flag combination strategies.*
@@ -198,6 +215,69 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 
 **Dependencies**: Phase 2 (BaseDetector complete).
 
+>>>>>>> phase-3-2-enhancements
+### Sub-Phase 3.2: Enhancements and Auto-Registry
+**Confirmed Requirements for Auto-Registry:**
+- Auto-registry via introspection in `biv/methods/__init__.py` for plugin-like extensibility.
+- Method names derived from class names (e.g., 'range' from 'RangeDetector', 'zscore' from 'ZscoreDetector').
+- Registry provides mapping from method name string to detector class.
+- Excludes abstract BaseDetector from discovery.
+- Raises KeyError or similar for unknown methods.
+- Enables dynamic discovery without manual updates, by collecting BaseDetector subclasses.
+
+**Confirmed Test Case Table for Auto-Registry:**
+
+| Test Case ID | Description | Input | Expected Output | Edge Case? |
+|--------------|-------------|-------|-----------------|------------|
+| TC001 | Registry available methods include known detectors | None | 'range' in registry.keys() | No |
+| TC002 | Registry returns detector class for known method | 'range' | <class 'RangeDetector'> | No |
+| TC003 | Registry raises KeyError for unknown method | 'unknown' | KeyError("Method 'unknown' not found") | Yes |
+| TC004 | Registry excludes BaseDetector (no 'basedetector' key) | Check 'basedetector' not in registry | True | No |
+| TC005 | Registry discovers multiple methods when available | After zscore implemented | 'zscore' in registry | No |
+
+**Checklist**:
+- [x] Confirm requirements and generate test case table for enhancements (auto-registry via introspection, unit warnings, progress bars, etc.). *Note: Reordered for foundation before ZScore; dependencies updated.*
+- [x] Implement auto-registry via introspection in `biv/methods/__init__.py` for plugin-like extensibility (enables dynamic discovery without manual updates, per architecture.md). *Note: Auto-discovery mechanism implemented using BaseDetector.__subclasses__(), mapping class names to lowercase method names (e.g., RangeDetector -> 'range'); registry accessible as dict from biv.methods.registry; 5/5 tests pass; quality checks pass.*
+- [ ] Add unit detection feature (warn on potential unit mismatches, e.g., lbs vs kg) in API layer. *Note: Warnings for user awareness on potential measurement issues.*
+- [ ] Add progress bars option to API for large datasets (via tqdm or similar). *Note: Optional progress tracking in detect/remove.*
+- [ ] Implement DetectorPipeline for custom combination logic (beyond default OR, e.g., requiring flags from specific methods or AND operations). *Note: Class for flexible flag combination strategies.*
+- [ ] Support age-dependent ranges for more precise filtering (optional enhancement, configurable by age brackets). *Note: Extend range configs to support age thresholds.*
+- [ ] Red-Green-Refactor for tests on enhancements (test registry introspection, warnings, pipeline logic). *Note: Cycles complete?*
+- [ ] Refactor: Ensure backward compatibility with existing range; run quality checks. *Note: All pass?*
+
+**Dependencies**: Phase 2 (BaseDetector complete).
+=======
+**Confirmed Requirements for Auto-Registry:**
+- Auto-registry via introspection in `biv/methods/__init__.py` for plugin-like extensibility.
+- Method names derived from class names (e.g., 'range' from 'RangeDetector', 'zscore' from 'ZscoreDetector').
+- Registry provides mapping from method name string to detector class.
+- Excludes abstract BaseDetector from discovery.
+- Raises KeyError or similar for unknown methods.
+- Enables dynamic discovery without manual updates, by collecting BaseDetector subclasses.
+
+**Confirmed Test Case Table for Auto-Registry:**
+
+| Test Case ID | Description | Input | Expected Output | Edge Case? |
+|--------------|-------------|-------|-----------------|------------|
+| TC001 | Registry available methods include known detectors | None | 'range' in registry.keys() | No |
+| TC002 | Registry returns detector class for known method | 'range' | <class 'RangeDetector'> | No |
+| TC003 | Registry raises KeyError for unknown method | 'unknown' | KeyError("Method 'unknown' not found") | Yes |
+| TC004 | Registry excludes BaseDetector (no 'basedetector' key) | Check 'basedetector' not in registry | True | No |
+| TC005 | Registry discovers multiple methods when available | After zscore implemented | 'zscore' in registry | No |
+
+**Checklist**:
+- [x] Confirm requirements and generate test case table for enhancements (auto-registry via introspection, unit warnings, progress bars, etc.). *Note: Reordered for foundation before ZScore; dependencies updated.*
+- [x] Implement auto-registry via introspection in `biv/methods/__init__.py` for plugin-like extensibility (enables dynamic discovery without manual updates, per architecture.md). *Note: Auto-discovery mechanism implemented using BaseDetector.__subclasses__(), mapping class names to lowercase method names (e.g., RangeDetector -> 'range'); registry accessible as dict from biv.methods.registry; 5/5 tests pass; quality checks pass.*
+- [ ] Add unit detection feature (warn on potential unit mismatches, e.g., lbs vs kg) in API layer. *Note: Warnings for user awareness on potential measurement issues.*
+- [ ] Add progress bars option to API for large datasets (via tqdm or similar). *Note: Optional progress tracking in detect/remove.*
+- [ ] Implement DetectorPipeline for custom combination logic (beyond default OR, e.g., requiring flags from specific methods or AND operations). *Note: Class for flexible flag combination strategies.*
+- [ ] Support age-dependent ranges for more precise filtering (optional enhancement, configurable by age brackets). *Note: Extend range configs to support age thresholds.*
+- [ ] Red-Green-Refactor for tests on enhancements (test registry introspection, warnings, pipeline logic). *Note: Cycles complete?*
+- [ ] Refactor: Ensure backward compatibility with existing range; run quality checks. *Note: All pass?*
+
+**Dependencies**: Phase 2 (BaseDetector complete).
+
+>>>>>>> phase-3-2-enhancements
 **Dependencies**: Phase 3 (enhancements complete for auto-registry).
 
 **Clarifying Questions**:
