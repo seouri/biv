@@ -188,3 +188,20 @@ def test_detect_handles_non_numeric_columns() -> None:
     result = detector.detect(df, ["col1"])
     assert len(result["col1"]) == 1
     assert result["col1"].iloc[0] == "flag"
+
+
+def test_validate_column_raises_for_nonexistent_column() -> None:
+    class Concrete(BaseDetector):
+        def validate_config(self) -> None:
+            pass
+
+        def detect(self, df: pd.DataFrame, columns: list[str]) -> Dict[str, pd.Series]:
+            return {}
+
+    detector = Concrete()
+    df = pd.DataFrame({"existing_col": [1, 2, 3]})
+
+    with pytest.raises(
+        ValueError, match="Column 'missing_col' does not exist in DataFrame"
+    ):
+        detector._validate_column(df, "missing_col")
