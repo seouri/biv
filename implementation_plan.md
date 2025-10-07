@@ -134,8 +134,6 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 
 **Additional Notes**: If discrepancies arise during implementation, reference README.md's detect examples for expected flag column outputs and `architecture.md`'s registry pattern for extensibility.
 
-**Upon Phase Completion**: Update all checkboxes above as [x], add summary notes (e.g., "Phase 2 done: Base ready for subclassing"), commit the updated plan, and proceed to Phase 3. *Strong Reminder: Do not skip this!*
-
 ## Phase 3: Implement Individual Detection Methods
 
 **Objective**: Build modular detectors for 'range' and 'zscore', each in their own subdirectory. This allows easy addition of new methods (e.g., BMI) by subclassing `BaseDetector`.
@@ -185,38 +183,8 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 | TC024 | Detect with negative ranges and values | df['col']=[-5, 10], config min=-10 max=20 | [False, False] | Yes |
 | TC025 | Detect with integer values in df | df['col']=[10, 20], config min=15 max=25 | [True, False] | Yes |
 
-**Confirmed Requirements for Auto-Registry:**
-- Auto-registry via introspection in `biv/methods/__init__.py` for plugin-like extensibility.
-- Method names derived from class names (e.g., 'range' from 'RangeDetector', 'zscore' from 'ZscoreDetector').
-- Registry provides mapping from method name string to detector class.
-- Excludes abstract BaseDetector from discovery.
-- Raises KeyError or similar for unknown methods.
-- Enables dynamic discovery without manual updates, by collecting BaseDetector subclasses.
-
-**Confirmed Test Case Table for Auto-Registry:**
-
-| Test Case ID | Description | Input | Expected Output | Edge Case? |
-|--------------|-------------|-------|-----------------|------------|
-| TC001 | Registry available methods include known detectors | None | 'range' in registry.keys() | No |
-| TC002 | Registry returns detector class for known method | 'range' | <class 'RangeDetector'> | No |
-| TC003 | Registry raises KeyError for unknown method | 'unknown' | KeyError("Method 'unknown' not found") | Yes |
-| TC004 | Registry excludes BaseDetector (no 'basedetector' key) | Check 'basedetector' not in registry | True | No |
-| TC005 | Registry discovers multiple methods when available | After zscore implemented | 'zscore' in registry | No |
-
-**Checklist**:
-- [x] Confirm requirements and generate test case table for enhancements (auto-registry via introspection, unit warnings, progress bars, etc.). *Note: Reordered for foundation before ZScore; dependencies updated.*
-- [x] Implement auto-registry via introspection in `biv/methods/__init__.py` for plugin-like extensibility (enables dynamic discovery without manual updates, per architecture.md). *Note: Auto-discovery mechanism implemented using BaseDetector.__subclasses__(), mapping class names to lowercase method names (e.g., RangeDetector -> 'range'); registry accessible as dict from biv.methods.registry; 5/5 tests pass; quality checks pass.*
-- [ ] Add unit detection feature (warn on potential unit mismatches, e.g., lbs vs kg) in API layer. *Note: Warnings for user awareness on potential measurement issues.*
-- [ ] Add progress bars option to API for large datasets (via tqdm or similar). *Note: Optional progress tracking in detect/remove.*
-- [ ] Implement DetectorPipeline for custom combination logic (beyond default OR, e.g., requiring flags from specific methods or AND operations). *Note: Class for flexible flag combination strategies.*
-- [ ] Support age-dependent ranges for more precise filtering (optional enhancement, configurable by age brackets). *Note: Extend range configs to support age thresholds.*
-- [ ] Red-Green-Refactor for tests on enhancements (test registry introspection, warnings, pipeline logic). *Note: Cycles complete?*
-- [ ] Refactor: Ensure backward compatibility with existing range; run quality checks. *Note: All pass?*
-
-**Dependencies**: Phase 2 (BaseDetector complete).
-
->>>>>>> phase-3-2-enhancements
 ### Sub-Phase 3.2: Enhancements and Auto-Registry
+
 **Confirmed Requirements for Auto-Registry:**
 - Auto-registry via introspection in `biv/methods/__init__.py` for plugin-like extensibility.
 - Method names derived from class names (e.g., 'range' from 'RangeDetector', 'zscore' from 'ZscoreDetector').
@@ -246,39 +214,6 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 - [ ] Refactor: Ensure backward compatibility with existing range; run quality checks. *Note: All pass?*
 
 **Dependencies**: Phase 2 (BaseDetector complete).
-=======
-**Confirmed Requirements for Auto-Registry:**
-- Auto-registry via introspection in `biv/methods/__init__.py` for plugin-like extensibility.
-- Method names derived from class names (e.g., 'range' from 'RangeDetector', 'zscore' from 'ZscoreDetector').
-- Registry provides mapping from method name string to detector class.
-- Excludes abstract BaseDetector from discovery.
-- Raises KeyError or similar for unknown methods.
-- Enables dynamic discovery without manual updates, by collecting BaseDetector subclasses.
-
-**Confirmed Test Case Table for Auto-Registry:**
-
-| Test Case ID | Description | Input | Expected Output | Edge Case? |
-|--------------|-------------|-------|-----------------|------------|
-| TC001 | Registry available methods include known detectors | None | 'range' in registry.keys() | No |
-| TC002 | Registry returns detector class for known method | 'range' | <class 'RangeDetector'> | No |
-| TC003 | Registry raises KeyError for unknown method | 'unknown' | KeyError("Method 'unknown' not found") | Yes |
-| TC004 | Registry excludes BaseDetector (no 'basedetector' key) | Check 'basedetector' not in registry | True | No |
-| TC005 | Registry discovers multiple methods when available | After zscore implemented | 'zscore' in registry | No |
-
-**Checklist**:
-- [x] Confirm requirements and generate test case table for enhancements (auto-registry via introspection, unit warnings, progress bars, etc.). *Note: Reordered for foundation before ZScore; dependencies updated.*
-- [x] Implement auto-registry via introspection in `biv/methods/__init__.py` for plugin-like extensibility (enables dynamic discovery without manual updates, per architecture.md). *Note: Auto-discovery mechanism implemented using BaseDetector.__subclasses__(), mapping class names to lowercase method names (e.g., RangeDetector -> 'range'); registry accessible as dict from biv.methods.registry; 5/5 tests pass; quality checks pass.*
-- [ ] Add unit detection feature (warn on potential unit mismatches, e.g., lbs vs kg) in API layer. *Note: Warnings for user awareness on potential measurement issues.*
-- [ ] Add progress bars option to API for large datasets (via tqdm or similar). *Note: Optional progress tracking in detect/remove.*
-- [ ] Implement DetectorPipeline for custom combination logic (beyond default OR, e.g., requiring flags from specific methods or AND operations). *Note: Class for flexible flag combination strategies.*
-- [ ] Support age-dependent ranges for more precise filtering (optional enhancement, configurable by age brackets). *Note: Extend range configs to support age thresholds.*
-- [ ] Red-Green-Refactor for tests on enhancements (test registry introspection, warnings, pipeline logic). *Note: Cycles complete?*
-- [ ] Refactor: Ensure backward compatibility with existing range; run quality checks. *Note: All pass?*
-
-**Dependencies**: Phase 2 (BaseDetector complete).
-
->>>>>>> phase-3-2-enhancements
-**Dependencies**: Phase 3 (enhancements complete for auto-registry).
 
 **Clarifying Questions**:
 - For Range: "Confirm ranges: weight 30-200 kg, height 100-250 cm?"
@@ -321,37 +256,38 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 
 **Upon Phase Completion**: Update all checkboxes above as [x], add summary notes (e.g., "Phase 4 done: ZScoreDetector ready"), commit the updated plan, and proceed to Phase 5. *Strong Reminder: Do not skip this!*
 
-## Phase 5: Implement biv.detect() Function
+## Phase 5: Implement biv.detect() and biv.remove() Functions
 
-**Objective**: Build biv.detect() to annotate the input DataFrame with boolean flag columns for BIVs using the specified methods, as per README.md API. Integrates with auto-registry from Phase 3 and ZScoreDetector from Phase 4.
+**Objective**: Build `biv.detect()` to annotate the input DataFrame with boolean flag columns for BIVs and `biv.remove()` to replace BIVs with `np.nan`, using the specified methods, as per README.md API. Integrates with auto-registry from Phase 3 and ZScoreDetector from Phase 4.
 
 **Files to Modify**:
-- `biv/api.py`: Add detect function with orchestrator logic (as per architecture.md).
-- `biv/__init__.py`: Expose detect.
+- `biv/api.py`: Add detect and remove functions with orchestrator logic (as per architecture.md).
+- `biv/__init__.py`: Expose detect and remove.
 - `biv/methods/__init__.py`: Complete registry from Phase 3 for detector discovery.
 
 **Checklist** (Follow `tdd_guide.md` for each atomic behavior, e.g., method orchestration, flag combination):
-- [ ] Create and switch to a branch for Phase 5 (e.g., `git checkout -b phase-5-detect`).
-- [ ] Confirm requirements and generate test case table for detect behaviors (multi-method support with range and zscore, flag naming, OR combination). *Note: Human confirmed; defaults to OR, flag suffix '_biv_flag', customizable columns.*
-- [ ] Red-Green-Refactor for core tests in `tests/test_api.py` (e.g., range only, then zscore only, combined). *Note: Cycle complete; orchestrate detectors via registry, collect flags, combine with OR.*
+- [ ] Create and switch to a branch for Phase 5 (e.g., `git checkout -b phase-5-api`).
+- [ ] Confirm requirements and generate test case table for detect and remove behaviors (multi-method support with range and zscore, flag naming, OR combination for detect; replacement for remove). *Note: Human confirmed; defaults to OR, flag suffix '_biv_flag', customizable columns.*
+- [ ] Red-Green-Refactor for core tests in `tests/test_api.py` (e.g., range only, then zscore only, combined for both detect and remove). *Note: Cycle complete; orchestrate detectors via registry, collect flags, combine with OR for detect; for remove, replace flagged values with np.nan.*
 - [ ] Implement registry integration in `biv/methods/__init__.py` to instantiate detectors by name. *Note: Registry returns detector class instances for given configs.*
 - [ ] Implement `detect` in `biv/api.py` with defaults, handling config parsing and adding flag columns. *Note: Core tests passing; returns new df with added boolean columns.*
-- [ ] Red-Green-Refactor for multi-method, custom params, edge cases. *Note: Cycles complete; handle empty methods, invalid names, progress_bar, suffixes.*
-- [ ] Refactor: Match README params/docstrings; quality checks pass. *Note: Linting and mypy ok.*
-- [ ] Update `__init__.py` to expose detect. *Note: Import works.*
+- [ ] Implement `remove` in `biv/api.py` by calling detect, then replacing flagged values with np.nan. *Note: Reuses detect logic for consistency.*
+- [ ] Red-Green-Refactor for multi-method, custom params, edge cases. *Note: Cycles complete; handle empty methods, invalid names, progress_bar, suffixes for detect; direct replacement for remove.*
+- [ ] Refactor: Match README params/docstrings for both functions; quality checks pass. *Note: Linting and mypy ok.*
+- [ ] Update `__init__.py` to expose detect and remove. *Note: Import works.*
 
 **Dependencies**: Phase 4 (ZScoreDetector complete for full integration).
 
 **Clarifying Questions**:
-- "ShouldCombination default to OR, with future support for custom via DetectorPipeline (Phase 3 enhancement)?"
-- "Confirm flag suffix default '_biv_flag', customizable?"
+- "Should combination default to OR for multi-method, with future support for custom via DetectorPipeline (Phase 3 enhancement)?"
+- "Confirm flag suffix default '_biv_flag', customizable for detect?"
 
 **Milestones/Tests**:
-- [ ] `uv run pytest tests/test_api.py` passes.
+- [ ] `uv run pytest tests/test_api.py` passes for both detect and remove.
 - [ ] `uv run ruff check biv/api.py` passes.
-- [ ] Examples match README.md detect section.
+- [ ] Examples match README.md detect and remove sections.
 
-**Upon Phase Completion**: Update all checkboxes as [x], summary notes (e.g., "Phase 5 done: detect function complete"), proceed to Phase 6.
+**Upon Phase Completion**: Update all checkboxes as [x], summary notes (e.g., "Phase 5 done: API functions complete"), proceed to Phase 6.
 
 ## Phase 6: Comprehensive Testing and Coverage
 
@@ -369,7 +305,7 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 - [ ] Verify coverage: Run `uv run pytest --cov=biv` (aim >90% per guide). *Note: Coverage % achieved.*
 - [ ] Run `uv run ruff check tests/` to lint tests. *Note: Test linting passes?*
 
-**Dependencies**: Phase 5 (detect function complete for end-to-end testing).
+**Dependencies**: Phase 5 (API functions complete for end-to-end testing).
 
 **Clarifying Questions**:
 - "Any specific test frameworks beyond pytest?"
