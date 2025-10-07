@@ -146,10 +146,10 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 
 ### Sub-Phase 3.1: RangeDetector
 **Checklist**:
-- [x] Confirm requirements and generate test case table for RangeDetector behaviors with pydantic configs for type-safety and clear errors. *Note: Human confirmed; requirements clarified (config dict[column, {min,max}], detection flags out of range, StrictFloat for type safety); test case table generated with 15 cases covering core and edges.*
+- [x] Confirm requirements and generate test case table for RangeDetector behaviors with pydantic configs for type-safety and clear errors. *Note: Human confirmed; requirements clarified (config dict[column, {min,max}], detection flags out of range, StrictFloat for type safety); test case table generated with 16 cases covering core and edges.*
 - [x] Add pydantic config model for range parameters (min/max per column). *Note: Implemented RangeConfig model with StrictFloat and field validators enforcing min<max; TDD cycles completed for config validation.*
-- [x] Red-Green-Refactor for core tests in `tests/methods/test_range/test_detector.py` (e.g., `detect` for out-of-range/NaNs, config validation). *Note: Cycle complete; wrote 15 failing tests (Red), implemented RangeDetector (Green), all tests pass (15/15); includes config validation with Pydantic ValidationError for missing/invalid min/max and StrictFloat for non-float rejection.*
-- [x] Implement `biv/methods/range/detector.py` (subclass `BaseDetector` with pydantic config). *Note: Tests passing? All 15 tests pass after implementation; includes detect logic for flagging (series < min) | (series > max), handling NaN correctly (False), Integrated pydantic for config validation with clear errors.**
+- [x] Red-Green-Refactor for core tests in `tests/methods/test_range/test_detector.py` (e.g., `detect` for out-of-range/NaNs, config validation). *Note: Cycle complete; wrote 15 failing tests (Red), implemented RangeDetector (Green), all tests pass with additional test for exclusivity (16/16); includes config validation with Pydantic ValidationError for missing/invalid min/max and StrictFloat for non-float rejection.*
+- [x] Implement `biv/methods/range/detector.py` (subclass `BaseDetector` with pydantic config). *Note: Tests passing? All 16 tests pass after implementation and change to exclusive bounds; includes detect logic for flagging (series < min) | (series > max), handling NaN correctly (False), Integrated pydantic for config validation with clear errors.**
 - [x] Red-Green-Refactor for edge cases: Zero values, extremes, config errors, non-health columns. *Note: Cycles complete; edge tests for zero/extreme values, empty DataFrames, large/small floats, config errors (min>max, missing keys/values), and DataFrame immutability included and passing.*
 - [x] Refactor: Optimize for usability; run quality checks (per guide). *Note: Linting passes; code refactored for modularity (pydantic v2 best practices); all quality checks (mypy, ruff, pytest) pass.*
 
@@ -172,6 +172,7 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 | TC013 | Very small value | val=-1e10, min=0 -> True | [True] | EDGE |
 | TC014 | Empty DataFrame | empty df, columns=['col'] | empty Series | Yes |
 | TC015 | Detect does not modify DataFrame | same df before/after | df unchanged | No |
+| TC016 | Detect upper bound exclusive | df['col']=[50.0, 100.0, 150.0], config min=0.0 max=100.0 | [False, False, True] | No |
 
 ### Sub-Phase 3.2: ZScoreDetector
 **Checklist**:
