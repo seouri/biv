@@ -20,20 +20,13 @@ class RangeConfig(BaseModel):
         description="Upper bound (exclusive maximum) for allowed values."
     )
 
-    @field_validator("lower_bound", "upper_bound", mode="after")
+    @field_validator("upper_bound", mode="after")
     @classmethod
     def validate_bounds(cls, v: float, info: Any) -> float:
         """Validate that lower_bound < upper_bound."""
-        field_name = info.field_name
-        if field_name == "lower_bound":
-            lower_val = v
-            upper_val = info.data.get("upper_bound")
-            if upper_val is not None and lower_val >= upper_val:
-                raise ValueError("lower_bound must be less than upper_bound")
-        elif field_name == "upper_bound":
-            lower_val = info.data.get("lower_bound")
-            if lower_val is not None and lower_val >= v:
-                raise ValueError("lower_bound must be less than upper_bound")
+        lower_val = info.data.get("lower_bound")
+        if lower_val is not None and lower_val >= v:
+            raise ValueError("lower_bound must be less than upper_bound")
         return v
 
 
