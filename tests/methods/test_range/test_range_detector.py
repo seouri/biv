@@ -139,3 +139,69 @@ class TestRangeDetector:
         # 50.0 is in range, 100.0 == max (not flagged), 150.0 > max (flagged)
         expected = pd.Series([False, False, True], name="col")
         pd.testing.assert_series_equal(result["col"], expected)
+
+    def test_tc017_detect_raises_value_error_column_not_in_df(self) -> None:
+        config = {"col": {"min": 10.0, "max": 100.0}}  # type: ignore
+        detector = RangeDetector(config)  # type: ignore
+        df = pd.DataFrame({"other_col": [1.0]})  # type: ignore
+        with pytest.raises(
+            ValueError, match="Column 'col' does not exist in DataFrame"
+        ):
+            detector.detect(df, ["col"])
+
+    def test_tc018_detect_raises_value_error_missing_config_for_column(self) -> None:
+        config = {"existing": {"min": 10.0, "max": 100.0}}  # type: ignore
+        detector = RangeDetector(config)  # type: ignore
+        df = pd.DataFrame({"existing": [1.0], "missing": [2.0]})  # type: ignore
+        with pytest.raises(
+            ValueError, match="No range config provided for column 'missing'"
+        ):
+            detector.detect(df, ["existing", "missing"])
+
+    def test_tc019_init_raises_value_error_config_not_dict(self) -> None:
+        with pytest.raises(ValueError):
+            RangeDetector("invalid")  # type: ignore
+
+    def test_tc020_init_raises_value_error_column_config_not_dict(self) -> None:
+        config = {"col": "invalid"}  # type: ignore
+        with pytest.raises(ValueError, match="Config for column 'col' must be a dict"):
+            RangeDetector(config)  # type: ignore
+
+    def test_tc021_detect_all_nan_values(self) -> None:
+        df = pd.DataFrame({"col": [np.nan, np.nan]})  # type: ignore
+        config = {"col": {"min": 0.0, "max": 100.0}}  # type: ignore
+        detector = RangeDetector(config)  # type: ignore
+        result = detector.detect(df, ["col"])
+        expected = pd.Series([False, False], name="col")
+        pd.testing.assert_series_equal(result["col"], expected)
+
+    def test_tc022_detect_empty_columns_list(self) -> None:
+        df = pd.DataFrame({"col": [10.0]})  # type: ignore
+        config = {"col": {"min": 0.0, "max": 100.0}}  # type: ignore
+        detector = RangeDetector(config)  # type: ignore
+        result = detector.detect(df, [])
+        assert result == {}
+
+    def test_tc023_detect_values_at_exact_lower_bound(self) -> None:
+        df = pd.DataFrame({"col": [10.0]})  # type: ignore
+        config = {"col": {"min": 10.0, "max": 100.0}}  # type: ignore
+        detector = RangeDetector(config)  # type: ignore
+        result = detector.detect(df, ["col"])
+        expected = pd.Series([False], name="col")
+        pd.testing.assert_series_equal(result["col"], expected)
+
+    def test_tc024_detect_negative_ranges_and_values(self) -> None:
+        df = pd.DataFrame({"col": [-5.0, 10.0]})  # type: ignore
+        config = {"col": {"min": -10.0, "max": 20.0}}  # type: ignore
+        detector = RangeDetector(config)  # type: ignore
+        result = detector.detect(df, ["col"])
+        expected = pd.Series([False, False], name="col")
+        pd.testing.assert_series_equal(result["col"], expected)
+
+    def test_tc025_detect_integer_values_in_df(self) -> None:
+        df = pd.DataFrame({"col": [10, 20]})  # type: ignore
+        config = {"col": {"min": 15.0, "max": 25.0}}  # type: ignore
+        detector = RangeDetector(config)  # type: ignore
+        result = detector.detect(df, ["col"])
+        expected = pd.Series([True, False], name="col")
+        pd.testing.assert_series_equal(result["col"], expected)

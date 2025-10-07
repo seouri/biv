@@ -174,6 +174,15 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 | TC014 | Empty DataFrame | empty df, columns=['col'] | empty Series | Yes |
 | TC015 | Detect does not modify DataFrame | same df before/after | df unchanged | No |
 | TC016 | Detect upper bound exclusive | df['col']=[50.0, 100.0, 150.0], config min=0.0 max=100.0 | [False, False, True] | No |
+| TC017 | Detect raises ValueError for column not in df | df without 'col', columns=['col'] | ValueError("Column 'col' does not exist in DataFrame") | Yes |
+| TC018 | Detect raises ValueError for missing config for column | df with 'col', no config for 'col', columns=['col'] | ValueError("No range config provided for column 'col'") | Yes |
+| TC019 | Init raises ValueError for config not a dict | config="invalid" | ValueError | Yes |
+| TC020 | Init raises ValueError for column config not a dict | config={'col': 'invalid'} | ValueError | Yes |
+| TC021 | Detect with all NaN values | df['col']=[np.nan, np.nan], config min=0 max=100 | [False, False] | Yes |
+| TC022 | Detect with empty columns list | df, columns=[] | {} (empty dict) | Yes |
+| TC023 | Detect values at exact lower bound | val=min, config min=10 max=100 | [False] | No |
+| TC024 | Detect with negative ranges and values | df['col']=[-5, 10], config min=-10 max=20 | [False, False] | Yes |
+| TC025 | Detect with integer values in df | df['col']=[10, 20], config min=15 max=25 | [True, False] | Yes |
 
 ### Sub-Phase 3.2: ZScoreDetector
 **Checklist**:

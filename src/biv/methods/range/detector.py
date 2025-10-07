@@ -62,14 +62,18 @@ class RangeDetector(BaseDetector):
         Raises:
             ValueError: If config is invalid (missing min/max, min>=max, non-float).
         """
+        if not isinstance(config, dict):
+            raise ValueError("Config must be a dict mapping column names to dicts")
         # Validate config using Pydantic, mapping user-friendly keys to internal fields
         self.config: Dict[str, RangeConfig] = {}
         for col, params in config.items():
+            if not isinstance(params, dict):
+                raise ValueError(f"Config for column '{col}' must be a dict")
             try:
                 self.config[col] = RangeConfig(
                     lower_bound=params["min"], upper_bound=params["max"]
                 )
-            except (KeyError, ValidationError) as e:
+            except (KeyError, TypeError, ValidationError) as e:
                 raise ValueError(f"Invalid config for column '{col}': {e}") from e
         self.validate_config()
 
