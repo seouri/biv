@@ -74,7 +74,7 @@ That's it—the core system remains unchanged, and the new method is automatical
 
 Configuration flows from the user through the API layer to individual detectors:
 
-1. User calls `biv.detect(dataframe, methods={'range': {'min': 20, 'max': 200}, 'zscore': {'threshold': 3}})`
+1. User calls `biv.detect(dataframe, methods={'range': {'min': 20, 'max': 200}, 'zscore': {}})`
 
 2. `api.py` iterates through each method name and config pair
 

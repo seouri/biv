@@ -6,11 +6,11 @@
 ## Core Features
 
 - **Clear, Verb-Based API**: Separate, intuitive functions for `detect()` and `remove()` operations.
-    
-- **Highly Configurable**: Don't get stuck with hardcoded limits. Define your own custom ranges, z-score thresholds, and grouping logic to fit your specific dataset—whether it's pediatric, geriatric, or specialized.
-    
-- **Multiple Detection Methods**: Natively supports range checks and group-based z-score outlier detection.
-    
+
+- **Highly Configurable**: Don't get stuck with hardcoded limits. Define your own custom ranges to fit your specific dataset—whether it's pediatric, geriatric, or specialized. Z-score outlier detection requires age and sex columns.
+
+- **Multiple Detection Methods**: Natively supports range checks and z-score outlier detection.
+
 - **Built for Pandas**: Integrates seamlessly into the pandas data analysis ecosystem.
     
 
@@ -56,10 +56,7 @@ detection_methods = {
         'weight_kg': {'min': 20, 'max': 200},
         'height_cm': {'min': 100, 'max': 220}
     },
-    'zscore': {
-        'threshold': 3.0,
-        'group_by': ['sex'] # Group by sex for z-score calculation
-    }
+    'zscore': {}  # No additional parameters needed
 }
 
 # 2. Detect BIVs, which adds flag columns
@@ -125,10 +122,7 @@ pediatric_methods = {
         'body_weight': {'min': 5, 'max': 30},
         'body_height': {'min': 60, 'max': 110}
     },
-    'zscore': {
-        'threshold': 2.5,  # Use a tighter z-score threshold
-        'group_by': ['visit_age'] # Compare children of the same age
-    }
+    'zscore': {}  # Requires 'visit_age' and 'sex' columns (assuming 'sex' is in data)
 }
 
 # Detect BIVs using custom column names and methods
@@ -158,7 +152,7 @@ The package currently assumes input numeric columns (weight, height) are in stan
 
 - Ensure data consistency before use.
 - Standardize to kg/cm if possible.
-- Watch for warnings in development (future feature) about potential unit mismatches.
+- For zscore method: Uses WHO growth standards (<24 months) or CDC (≥24 months); ages in months; sex as 'M'/'F'. Warnings logged for potential unit issues (e.g., height >250 cm suggests inches) or age >240 mo (set to NaN). Invalid sex raises errors.
 
 For cross-checking, consider if detection results align with expected outliers for healthy population ranges.
 
@@ -174,11 +168,21 @@ Identifies BIVs and returns a DataFrame with added boolean flag columns.
     
     - **`range`** (dict): Keys are column names (`weight_col`, `height_col`) and values are dictionaries with `'min'` and `'max'` keys.
         
-    - **`zscore`** (dict): Defines z-score parameters.
-        
-        - `threshold` (float): The number of standard deviations from the mean to use as a cutoff.
-            
-        - `group_by` (list): A list of column names (e.g., `['sex', 'age']`) to group by before calculating z-scores. This ensures values are compared to their demographic peers.
+    - **`zscore`** (dict): Defines z-score parameters. Note: Requires 'age' and 'sex' columns in the DataFrame for z-score calculation (defaults to column names specified in function parameters). Computes anthropometric z-scores for weight-for-age (WAZ), height-for-age (HAZ), weight-for-height (WHZ), BMI-for-age (BMIz), and head circumference-for-age (HEADCZ) using WHO/CDC growth standards.
+
+        Z-Score Cutoffs for BIV Flagging:
+        - Weight-for-age: <-5 or >8
+        - Height-for-age: <-5 or >4
+        - Weight-for-height: <-4 or >8
+        - BMI-for-age: <-4 or >8
+        - Head circumference-for-age: <-5 or >5
+
+        For reproducibility, ZScoreDetector uses WHO/CDC reference data:
+        - WHO Child Growth Standards (2006) for ages <24 months: https://www.cdc.gov/growthcharts/who-data-files.htm
+        - CDC 2000 Growth Charts for ages ≥24 months: https://www.cdc.gov/growthcharts/cdc-data-files.htm
+        Data is cached locally in the `data/` subdirectory as .npz files.
+
+        Optional columns: 'head_circ_cm' for head circumference measurements.
             
 - **`..._col`** (str): Column name identifiers for patient ID, age, sex, weight, and height.
     

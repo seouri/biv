@@ -262,22 +262,29 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 
 ## Phase 4: ZScoreDetector
 
-**Objective**: Implement ZScoreDetector as a separate phase for its statistical complexity, utilizing auto-registry from Phase 3 enhancements. This involves group-based z-score outlier detection optimized with pandas vectorized operations, per architecture.md and README.md.
+**Objective**: Implement ZScoreDetector as a separate phase for its statistical complexity, utilizing auto-registry from Phase 3 enhancements. This calculates anthropometric z-scores for indicators using sex and age specific WHO Child Growth Standards (2006) for ages <24 months and CDC 2000 Growth Charts for ages >=24 months (both from CDC.gov for reproducibility), then marks as abnormal when the modified z-score is outside specified BIV ranges per indicator, per updated recommendations. Refer to detailed plan in `zscore_implementation_plan.md` for technical specifics, enhancements, and updates.
 
 **Files to Modify**:
-- `biv/methods/zscore/detector.py`: Subclass `BaseDetector` with pydantic config and detection logic.
-- `tests/methods/test_zscore/test_zscore_detector.py`: Comprehensive tests covering core, edges, and pandas optimizations.
-- `tests/conftest.py`: Additional fixtures for z-score specific edge cases (e.g., zero variance groups, mixed NaNs).
+- `biv/methods/zscore/detector.py`: Subclass `BaseDetector` with pydantic config, WHO/CDC z-score calculation logic, and abnormal flagging based on ranges.
+- `tests/methods/test_zscore/test_zscore_detector.py`: Comprehensive tests covering z-score calculations against reference data, abnormal range flagging, and edge cases.
+- `tests/conftest.py`: Additional fixtures for anthropometric z-score specific edge cases (e.g., different sexes, ages, NaNs).
 
 **Checklist** (Follow `tdd_guide.md` for each atomic behavior, per architecture.md interface contract and README.md zscore method):
 - [ ] Create and switch to a branch for Phase 4 (e.g., `git checkout -b phase-4-zscore`).
-- [ ] Confirm requirements and generate test case table for ZScoreDetector behaviors with pydantic configs (threshold, group_by). *Note: Human confirmed; config dict for threshold (float), group_by (list[str]), detection flags outliers beyond z-score threshold within groups.*
-- [ ] Add pydantic config model for zscore parameters (threshold, group_by, with defaults from README.md). *Note: ZScoreConfig model with StrictFloat for threshold >0, and List[StrictStr] for group_by.*
-- [ ] Red-Green-Refactor for core tests in `tests/methods/test_zscore/test_zscore_detector.py` (e.g., `detect` for z-score outliers with groupby, handling NaNs as False). *Note: Cycle complete; wrote failing tests, implemented detect using (z = (grp_series - grp_mean) / grp_std, abs(z) > threshold), vectorized.*
-- [ ] Implement `biv/methods/zscore/detector.py` (subclass `BaseDetector` with pydantic config and pandas groupby optimizations). *Note: Tests passing? Core detect logic complete.*
-- [ ] Red-Green-Refactor for additional cases: Insufficient data (min 2 per group for std), zero variance (warn/error?), large datasets/mixed NaNs, config validation. *Note: Cycles complete; edge tests for small groups, all same values, nan groups, config errors (threshold <=0, invalid group_by).*
-- [ ] Integrate unit warnings from Phase 3 (if implemented) for potential kg/cm mismatches. *Note: Optional link to enhancements for future warnings on z-score anomalies.*
-- [ ] Refactor: Optimize for performance with pandas: groupby.transform(lambda x: (x - x.mean()) / x.std()), handle NaNs properly; run quality checks. *Note: Linting passes.*
+- [ ] Confirm requirements and generate test case table for ZScoreDetector behaviors. Calculates growth-specific z-scores using sex and age from WHO/CDC reference data, flags BIVs using modified z-scores with fixed cutoffs. Requires 'sex' and 'age' columns in DataFrame; z-scores calculated per row. *Note: Human confirmed; BIV cutoffs based on modified z-scores:
+
+- Weight-for-age: < -5 or > 8
+- Height-for-age: < -5 or > 4
+- Weight-for-height: < -4 or > 8
+- BMI-for-age: < -4 or > 8
+- Head circumference-for-age: < -5 or > 5*
+
+- [ ] Add pydantic config model for zscore parameters (indicator, with defaults). *Note: ZScoreConfig model with indicator (str) for anthropometric indicator, requires 'sex' and 'age' columns in DataFrame for reference data lookup.*
+- [ ] Red-Green-Refactor for core tests in `tests/methods/test_zscore/test_zscore_detector.py` (e.g., `detect` for z-score calculation and abnormal flagging per range, handling NaNs as False). *Note: Cycle complete; wrote failing tests, implemented detect using WHO/CDC reference calculations, flag when z outside specified abnormal bounds.*
+- [ ] Implement `biv/methods/zscore/detector.py` (subclass `BaseDetector` with pydantic config, WHO/CDC data integration for z-score computation and range-based flagging). *Note: Tests passing? Anthropometric z-score logic complete.*
+- [ ] Red-Green-Refactor for additional cases: Missing sex/age columns, invalid indicator, out of reference range ages, NaN handling, config validation. *Note: Cycles complete; edge tests for reference boundary handling, data validation errors.*
+- [ ] Integrate reference data: Use WHO/CDC growth standards (e.g., via pyzst or similar libraries if available, or integrated data). *Note: If external lib needed, add dependency.*
+- [ ] Refactor: Optimize for performance with vectorized operations, handle large datasets; run quality checks. *Note: Linting passes.*
 
 **Dependencies**: Phase 3 (enhancements, including auto-registry for easy integration).
 
