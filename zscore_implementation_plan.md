@@ -203,3 +203,178 @@ Refined based on comprehensive expert assessment to achieve perfection (score: 1
 - **Risk Mitigation**: Release with end-to-end multi-method pipelines (range + zscore); simulate network failures in CI. Ensure all enhancements are MIT-compatible and conflict-free.
 
 This refined plan now addresses all assessment gaps, positioning ZScoreDetector as a robust, accurate, and high-performing solution ready for senior engineering standards in scientific package development.
+
+#### 7. Phased Implementation Plan for ZScoreDetector Integration into `biv` Package
+
+This phased plan ensures incremental, testable development per TDD, with full integration into `biv`. Human confirmations after each phase cycle; align with `implementation_plan.md` updates. This plan includes phased, step-by-step plans, each with a checklist and test case table. It follows TDD practices from `tdd_guide.md`, integrates with `biv`'s architecture (`architecture.md`), and ensures coverage >90% with test cases aligned to requirements. Phases build on prior BIV phases (Phase 1-3 complete per `implementation_plan.md`).
+
+##### Phase 1: Core Z-Score Calculation Functions (Prioritized)
+
+**Objective**: Implement vectorized LMS-based Z-Score, modified Z-Score, and interpolation functions in `biv.zscores.py` for reusability. Ensure scientific accuracy against WHO/CDC standards.
+
+**Checklist** (Follow `tdd_guide.md` Red-Green-Refactor per atomic behavior; confirm with human after cycles):
+- [ ] Create `biv/zscores.py`: Implement `lms_zscore`, `extended_bmiz`, `modified_zscore`, vectorized interpolation helpers; add caching with @lru_cache for efficiency.
+- [ ] Implement `calculate_growth_metrics`: Vectorized function to compute z-scores per sex/measure/age, handle WHO/CDC switch, warn on unit mismatches, derive BIV flags from modified thresholds.
+- [ ] Handle edge cases: Age >240 months -> NaN with warning; invalid sex -> ValueError; L≈0 tolerance for LMS; NaN propagation as False flags.
+- [ ] Add scientific validations: Cross-validate against SAS/R outputs for known examples (e.g., boxplot p-values, LMS derivations).
+- [ ] Optimize: Numba JIT on lms/extended; float32 for memory; batching for large N.
+- [ ] TDD cycles per function: Red (failing test with known inputs), Green (minimal imp), Refactor (quality checks); human confirm per cycle.
+- [ ] Integration: Import in `biv.methods.zscore.detector.py` for reuse.
+- [ ] Run coverage: uv run pytest --cov=biv.zscores >90%; ruff check OK.
+
+**Dependencies**: None (use mocked data if needed; data phase follows).
+
+**Test Case Table for Core Functions**:
+
+| Test Case ID | Description | Input | Expected Output | Edge Case? |
+|--------------|-------------|-------|-----------------|------------|
+| TC001 | LMS Z-Score for normal case (L≠0) | X=17.9, L=0.5, M=18.0, S=0.1 | z≈-0.1 (finite) | No |
+| TC002 | LMS Z-Score for L≈0 (log fallback) | X=18, L=0.0001, M=18, S=0.1 | z=0.0 | No |
+| TC003 | Extended BMIz for z < 1.645 | BMI=20, P95=25, Sigma=0.5, z=1.0 | z unchanged ≈1.0 | No |
+| TC004 | Extended BMIz cap at 8.21 for extreme | BMI=100, P95=25, Sigma=0.5, z=5.0 | z=8.21 | Yes |
+| TC005 | Modified Z-Score above median | X=20, M=18, L=0.5, S=0.1, z_tail=2.0 | mod_z > 0 | No |
+| TC006 | Modified Z-Score below median | X=16, M=18, L=0.5, S=0.1, z_tail=2.0 | mod_z < 0 | No |
+| TC007 | Modified Z-Score at median | X=18, M=18, L=0.5, S=0.1 | mod_z=0.0 | No |
+| TC008 | Vectorized interpolation for BMI at age 120mo boy | Age=120, Sex='M', Measure='bmi' | LMS arrays interpolated from CDC data | No |
+| TC009 | Seamless WHO/CDC boundary at 24mo | Age=[23.5, 24.5], Sex='M', Measure='waz' | z-scores blend smoothly | No |
+| TC010 | Handle age >240: set to NaN with warning | Age=300, Sex='F', Data loaded | Warnings logged; z=NaN | Yes |
+| TC011 | Missing head_circ: skip headcz flag | head_circ=None, Other measures present | No 'headcz' key or flag False | Yes |
+| TC012 | Unit mismatch warning for height >250cm | Height=[260], Units assumed cm | Warning: 'height suggests inches' | Yes |
+| TC013 | Invalid sex raises ValueError | Sex=['M', 'X'], Ages valid | ValueError("Sex values must be 'M' or 'F'") | Yes |
+| TC014 | Cross-validate against SAS macro for boy 60mo BMI | Known SAS output for BMI=17.9 at 60mo | z within 1e-6 tolerance | No |
+| TC015 | BIV flags from mod z: WAZ < -5 or >8 | mod_waz=[-6, 5, 9] | [True, False, True] | No |
+| TC016 | BIV flags from mod z: HAZ < -5 or >4 | mod_haz=[-6, 3, 5] | [True, False, True] | No |
+| TC017 | BIV flags from mod z: WHZ < -4 or >8 | mod_whz=[-5, 4, 9] | [True, False, True] | No |
+| TC018 | BIV flags from mod z: BMIz < -4 or >8 | mod_bmiz=[-5, 4, 9] | [True, False, True] | No |
+| TC019 | BIV flags from mod z: HEADCZ < -5 or >5 | mod_headcz=[-6, 3, 6] | [True, False, True] | No |
+| TC020 | Hypothesis-based microprecision check: z-score stability <1e-6 | 100 random LMS inputs via Hypothesis | All z-scores match reference within 1e-6 | No |
+| TC021 | Batching for large N: Processes 10M rows in batches | N=10M, batch_size=100K | Success without memory error | Yes |
+
+##### Phase 2: Data Acquisition and Preprocessing (Now After Core)
+
+**Objective**: Acquire, preprocess, and store WHO/CDC growth standards data securely for Z-Score calculations. Ensures data integrity, provenance, and offline accessibility. (Extended testing with mocks for independence from live downloads.)
+
+**Checklist** (Follow `tdd_guide.md` Red-Green-Refactor per atomic behavior; confirm with human after cycles):
+- [ ] Create `biv/scripts/download_data.py`: Script to fetch CSV files from WHO/CDC sources over HTTPS with SSL verification, parse to NumPy arrays, compute SHA-256 hashes, and save as .npz in `biv/data/` (git-ignored).
+- [ ] Implement data validation: Assert array shapes, monotonic age increments, and version hashes for security; log warnings on mismatches but allow fallback to cached data.
+- [ ] Add retry logic with backoff (e.g., requests with tenacity) for network robustness; include metadata with URLs, timestamps, and hashes.
+- [ ] Test script integration: Standalone TDD cycles for CSV parsing, .npz creation, and validation; ensure WHO/CDC boundary handling (24 months cutoff by validating separate datasets for <24mo vs >=24mo).
+- [ ] Update `.gitignore` to exclude `biv/data/*.npz`; add data/ directory.
+- [ ] Run quality checks: uv run pytest --cov=biv.scripts (if script has tests); ruff check; mypy; commit after human confirmation.
+
+**Dependencies**: Phase 1 complete (but tests can use mocks).
+
+**Test Case Table for Data Acquisition**:
+
+| Test Case ID | Description | Input | Expected Output | Edge Case? |
+|--------------|-------------|-------|-----------------|------------|
+| TC001 | Fetch WHO weight data successfully | URL for WHO weight CSV | .npz file with boy/girl arrays | No |
+| TC002 | Fetch CDC BMI data with retry on failure | URL for CDC BMI CSV, simulate network failure | Successful download after retry | Yes |
+| TC003 | Validate data shapes: LMS arrays match age length | Parsed arrays (L, M, S, ages) | No raise; arrays shape (n,) where n ~200 for CDC | No |
+| TC004 | Detect hash mismatch and log warning | Corrupted .npz or URL change | Warning logged; fallback to cache if available | Yes |
+| TC005 | Fail gracefully on invalid URL | Malformed URL | ValueError with descriptive message | Yes |
+| TC006 | Include metadata in .npz: URLs, timestamps | Successful download | .npz with metadata dict | No |
+| TC007 | Handle multi-measure .npz: weight, height, bmi | Combined CSVs | Single .npz with keys per measure/sex | No |
+| TC008 | Validate age monotonicity: increasing ages | Parsed age array | No raise if monotonic | No |
+| TC009 | Compute SHA-256 hash and verify integrity | Downloaded vs. expected hash | Hash match (no warning) | No |
+| TC010 | Fallback to cached data on network failure | Persistent network error | Logs warning; uses existing .npz | Yes |
+| TC011 | Handle WHO/CDC boundary: Separate 24mo datasets | Download WHO (<24mo) and CDC (>=24mo) | Separate .npz files created; no overlap warnings | No |
+
+##### Phase 3: ZScoreDetector Class Implementation
+
+**Objective**: Implement ZScoreDetector inheriting BaseDetector, with Pydantic config, auto-registry, and integration calls to calculate_growth_metrics. Returns BIV flags for specified columns ('weight_kg', 'height_cm').
+
+**Checklist**:
+- [ ] Create config model: ZScoreConfig(Pydantic) with age_col, sex_col, defaults 'age', 'sex', validated.
+- [ ] Implement ZScoreDetector in `biv.methods.zscore.detector.py`: Inherit BaseDetector, implement detect() calling calculate_growth_metrics, extract flags per cutoffs.
+- [ ] Handle column mapping: Map user columns to standard names (e.g., patient_id_col, but for zscore, age/sex required).
+- [ ] Auto-registry: Ensure __init__.py adds 'zscore' method via introspection (per Phase 3 range enhancements).
+- [ ] Edge handling: NaN support (flags False), validate df columns; modify if needed based on README (age in months, sex M/F).
+- [ ] TDD: Cycles for detector instantiation, config validation, detect() with sample df.
+- [ ] Refactor: Docstrings, type hints; quality checks pass.
+- [ ] Commit: After human confirm, push to phase branch.
+
+**Dependencies**: Phase 2 (core functions ready).
+
+**Test Case Table for ZScoreDetector**:
+
+| Test Case ID | Description | Input | Expected Output | Edge Case? |
+|--------------|-------------|-------|-----------------|------------|
+| TC001 | Instantiate ZScoreDetector with valid config | {} (defaults) | No raise; config.age_col='age' | No |
+| TC002 | Config validate age_col type | {'age_col': 123} | ValidationError | Yes |
+| TC003 | Detect on sample df: flags for BMI BIV | Df with age, sex, weight, height | {'bmi': pd.Series(...)} with flags per mod_bmiz | No |
+| TC004 | Detect raises ValueError for missing age col | Df without 'age', config default | ValueError("Column 'age' does not exist") | Yes |
+| TC005 | Detect handles NaN in weight: flag False | Df with NaN weight, valid age/sex | False in series | Yes |
+| TC006 | Detect for multiple measures: WAZ and HAZ | Df with measures, columns=['waz', 'haz'] | Dict with series per measure | No |
+| TC007 | Invalid sex handling raises | Df sex='UNKNOWN', Call detect | ValueError from calculate_growth_metrics | Yes |
+| TC008 | Registry includes 'zscore' method | Check biv.methods.registry | 'zscore' key exists | No |
+| TC009 | Detect does not modify input df | Df before/after | df unchanged | No |
+| TC010 | Cutoffs apply: Mod WAZ < -5 or >8 flagged | Df with extreme WAZ | True for flagged rows | No |
+| TC011 | Age in months validation assumed | Df age=[12, 24], years? | Warn if units suspect (age>240) | Yes |
+| TC012 | Config validate sex_col as string | {'sex_col': 456} | ValidationError | Yes |
+| TC013 | Integration combiner: Pipeline OR flags ZScore + RangeDetector | Df extreme in range only | Flagged where either detects true | No |
+
+##### Phase 4: Integration with BIV API and Testing
+
+**Objective**: Integrate ZScoreDetector into biv.detect/remove with full API support (progress_bar, column mapping), add comprehensive tests. Ensure end-to-end TDD coverage.
+
+**Checklist**:
+- [ ] Update api.py: Support 'zscore' in methods, pass configs to detector; handle column renames (age_col='visit_age', etc. per README).
+- [ ] Add progress_bar support in detect/remove: Pass to detectors if applicable; integrate tqdm for long runs.
+- [ ] Unit detection warnings in api.py: Extend to zscore (e.g., age in years -> warn).
+- [ ] Comprehensive tests: test_zscore_detector.py with unit/int tests; conftest fixtures for sample dfs with age/sex.
+- [ ] Property-based tests: Use Hypothesis for random valid inputs, verify invariance.
+- [ ] Cross-method tests: ZScore + Range via DetectorPipeline (OR/AND).
+- [ ] Edges: Large N, NaN heavy, boundary ages.
+- [ ] Coverage >95% for zscore/; full suite OK.
+- [ ] Fixes: Any linter/mypy issues; refactor for clarity.
+
+**Dependencies**: Phase 3 (ZScoreDetector ready).
+
+**Test Case Table for Integration and Testing**:
+
+| Test Case ID | Description | Input | Expected Output | Edge Case? |
+|--------------|-------------|-------|-----------------|------------|
+| TC001 | biv.detect with zscore method | Df, methods={'zscore': {}}, weight_kg etc. | Flagged df with new columns | No |
+| TC002 | biv.remove replaces flagged zscore | Flagged df from detect | BIVs set to NaN | No |
+| TC003 | Column mapping: custom age_col | Df['visit_age'], config {'age_col':'visit_age'} | Detect succeeds with mapping | No |
+| TC004 | Progress bar displays for large N | N=10K, progress_bar=True | Progress bar shown briefly | No |
+| TC005 | Unit warning for suspect age units | Df age=[15], config | Warning: 'age suggests years' | Yes |
+| TC006 | Pipeline OR with range and zscore | Df extreme in range only | Flagged where either detects | No |
+| TC007 | NaN heavy df: flags False for invalid rows | Df mostly NaN age/sex | All flags False except valid rows | Yes |
+| TC008 | Invalid config raises in api | methods={'zscore': {'age_col': []}} | Pydantic ValidationError from detect | Yes |
+| TC009 | End-to-end: sample data flagged correctly | Example from README | Matches expected (zscore flags TEENAGE) | No |
+| TC010 | Hypothesis test: random valid ages/sexes | 100 random samples | No errors, z-scores finite | No |
+| TC011 | Performance sanity: <10s for 10M rows | Synthetic df 10M rows | Time <10s logged; Memory usage <1GB | No |
+| TC012 | Custom combination AND in DetectorPipeline zscore + range | Df flagged in both methods | AND combined flags (only true if both true) | No |
+
+##### Phase 5: Performance Optimization and Finalization
+
+**Objective**: Optimize for scalability, add telemetry, finalize with benchmarks and docs. Ensure production-ready for large pediatric datasets.
+
+**Checklist**:
+- [ ] Optimization: Profiler runs; add multiprocessing Pool for >10M rows; Dask for extreme N; float32 dtypes.
+- [ ] Benchmarks: Script biv/scripts/benchmark_zscore.py; log times/memory for 1K-50M rows.
+- [ ] Telemetry: Add optional metrics in api.py (e.g., execution time, rows processed).
+- [ ] Docs: Update README with zscore examples (pediatric extended); ensure API docs cover config.
+- [ ] Final tests: CI-style runs (uv sync fails if not); stress tests on edge hardware.
+- [ ] Phase complete: Update implementation_plan.md Phase 4 as [x]; commit to main.
+- [ ] Post-launch: Monitor usage for refinements (e.g., common configs).
+
+**Dependencies**: Phase 4 complete.
+
+**Test Case Table for Optimizations**:
+
+| Test Case ID | Description | Input | Expected Output | Edge Case? |
+|--------------|-------------|-------|-----------------|------------|
+| TC001 | Multiprocessing on 8-core: 10M rows <10s | Df 10M, Pool chunks | Time <10s, speedup >2x | No |
+| TC002 | Dask chunking for 50M rows | N=50M, dask.delayed | Success <60s, memory peak <8GB | Yes |
+| TC003 | Float32 memory reduction: 1M rows | Df 1M in float32 vs float64 | Memory usage ~50% less | No |
+| TC004 | Profile hotspots: optimize interp | Profiler on 1M rows | No bottlenecks >10% time | No |
+| TC005 | Telemetry logs comprehensive metrics | Run with telemetry=True | Logs: 'Processed 1000 rows in 0.5s, Memory peak: 512MB' | No |
+| TC006 | Benchmarks scripted: timeit outputs | Run benchmark_zscore.py | CSV/CSV logged with times | No |
+| TC007 | Large N edge: Handle >100M with fallbacks | Synthetic 100M | Success or graceful error | Yes |
+| TC008 | Boundary performance: At 24mo blend | Many around 24mo: no spikes | Smooth time | No |
+| TC009 | CI regression check: Threshold on time | Run in CI, fail if >12s/10M | Pass if within | No |
+| TC010 | Final README update: ZScore section added | Check README.md | ZScore examples match | No |
+| TC011 | Stress test on low-resource hardware (2GB RAM, 2-core) | Synthetic df 100K rows | Success <30s, memory <1.5GB | Yes |
