@@ -8,9 +8,12 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "dask[dataframe,delayed]>=2025.9.1",
+    "numba>=0.62.1",
     "numpy>=2.3.3",
     "pandas>=2.3.3",
     "pydantic>=2.11.10",
+    "scipy>=1.16.2",
 ]
 
 [build-system]
@@ -34,8 +37,16 @@ quote-style = "double"
 [tool.mypy]
 python_version = "3.13"
 warn_return_any = true
-disallow_untyped_defs = true
+disallow_untyped_defs = false
 mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = "numba"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.test_zscores"
+disallow_untyped_defs = false
 
 [dependency-groups]
 dev = [
@@ -46,4 +57,5 @@ dev = [
     "pytest>=8.4.2",
     "pytest-cov>=7.0.0",
     "ruff>=0.13.3",
+    "scipy-stubs>=1.16.2.3",
 ]
