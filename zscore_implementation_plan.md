@@ -237,18 +237,18 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC007 | Modified Z-Score at median | X=18, M=18, L=0.5, S=0.1 | mod_z=0.0 | No |
 | TC008 | interpolate_lms placeholder call | None | No error | No |
 | TC009 | Seamless boundary placeholder | None | No error | No |
-| TC010 | age >240 | agemos=[300], sex=['M'] | TODO: Test in calculate_growth_metrics | Yes |
-| TC011 | missing head_circ | agemos, sex, height, weight | TODO: Test in calculate_growth_metrics | Yes |
-| TC012 | unit warning | agemos, sex, height=[260], weight | TODO: Test warning in calculate_growth_metrics | Yes |
-| TC013 | invalid sex | agemos, sex=['X'] | TODO: Test in calculate_growth_metrics | Yes |
-| TC014 | cross-validate SAS | agemos=[60], sex=['M'], weight=[1] | TODO: With known values | No |
-| TC015 | BIV flags for WAZ | Mock mod_waz | TODO: Test derivation in calculate_growth_metrics | No |
-| TC016 | BIV flags for HAZ | Mock mod_haz | TODO: Test derivation in calculate_growth_metrics | No |
-| TC017 | BIV flags for WHZ | Mock mod_whz | TODO: Test derivation in calculate_growth_metrics | No |
-| TC018 | BIV flags for BMIz | Mock mod_bmiz | TODO: Test derivation in calculate_growth_metrics | No |
-| TC019 | BIV flags for HEADCZ | Mock mod_headcz | TODO: Test derivation in calculate_growth_metrics | No |
+| TC010 | Handle age >240: set to NaN with warning | agemos=[300], sex=['M'] | z=NaN, warning | Yes |
+| TC011 | Missing head_circ: skip headcz flag | agemos, sex, height, weight | Skip headcz | Yes |
+| TC012 | Unit mismatch warning for height >250cm | agemos, sex, height=[260], weight | Warning logged | Yes |
+| TC013 | Invalid sex raises ValueError | agemos, sex=['X'] | ValueError | Yes |
+| TC014 | Cross-validate against SAS macro for boy 60mo BMI | agemos=[60], sex=['M'], weight=[1] | waz≈0.0 | No |
+| TC015 | BIV flags for WAZ | agemos, sex, weight | _bivwaz boolean | No |
+| TC016 | BIV flags for HAZ | agemos, sex, height | _bivhaz boolean | No |
+| TC017 | BIV flags for WHZ | agemos, sex, height<121, weight | _bivwhz boolean | No |
+| TC018 | BIV flags for BMIz | agemos, sex, height, weight | _bivbmi boolean | No |
+| TC019 | BIV flags for HEADCZ | agemos, sex, head_circ | _bivheadcz boolean | No |
 | TC020 | Hypothesis-based microprecision check: z-score stability within valid ranges (1e-6 tol against LMS formula) | Random LMS inputs | Finite z-scores within 1e-6 atol/rtol of manual calc | No |
-| TC021 | Batching for large N | None | TODO: Test performance | No |
+| TC021 | Batching for large N: Processes 10M rows in batches | None | TODO: Test performance | No |
 | TC022 | Modified Z-Score with L≈0 (log scale) | X=18, M=18, L=0.0001, S=0.1 | mod_z=0.0 | Yes |
 | TC023 | Extended BMIz extreme cap exact 8.21 | BMI=200, p95=20, sigma=1, original_z=6 | z=8.21 | Yes |
 | TC024 | LMS zscore with invalid S<=0 | X=17.9, L=0.5, M=18, S=0 | z=NaN | Yes |
@@ -265,7 +265,7 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC035 | calculate_growth_metrics weight warning | agemos, sex, height, weight=[600] | Warning logged | Yes |
 | TC036 | calculate_growth_metrics age years warning | agemos=[250], sex, height | Warnings for >240 and years | Yes |
 | TC037 | calculate_growth_metrics whz | agemos, sex, height=[110], weight, measures=['whz'] | 'whz', 'mod_whz' in result | No |
-| TC038 | calculate_growth_metrics whz not all below 121 | agemos=[60,60], sex=['M','M'], height=[110,130], weight, measures=['whz'] | No 'whz', 'mod_whz' | Yes |
+| TC038 | calculate_growth_metrics whz partial below 121 | agemos=[60,60], sex=['M','M'], height=[110,130], weight, measures=['whz'] | 'whz' with NaN where >=121 | Yes |
 | TC039 | calculate_growth_metrics missing weight | agemos, sex, height | No waz, bmiz, mod_bmiz, _bivbmi | Yes |
 | TC040 | calculate_growth_metrics missing height | agemos, sex, weight | No haz, bmiz, mod_bmiz, _bivbmi | Yes |
 | TC041 | calculate_growth_metrics headcz | agemos, sex, head_circ | 'headcz' in result | No |
@@ -277,6 +277,12 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC047 | Modified Z-Score different z_tail | X=20, M=18, L=0.5, S=0.1, z_tail=3.0 | mod_z != 0 | Yes |
 | TC048 | Extended BMIz all normal (<1.645) | bmi=[20,21], p95=[25,25], sigma=[0.5,0.5], original_z=[1.0,1.5] | z = original_z (no extension) | No |
 | TC049 | Hypothesis test for extended_bmiz branches (z<1.645 vs >=1.645) | Random BMI/p95/sigma/z | Finite z, <=8.21, normal==original, extreme!=original | No |
+| TC050 | lms_zscore handles n=0 edge case | Empty arrays | Empty NaN array | Yes |
+| TC051 | extended_bmiz handles n=0 edge case | Empty arrays | Empty NaN array | Yes |
+| TC052 | modified_zscore handles n=0 edge case | Empty arrays | Empty NaN array | Yes |
+| TC053 | L_ZERO_THRESHOLD constant usage in lms_zscore | L above/below threshold | Different branches taken | No |
+| TC054 | WHZ optimization: no computation when all heights >=121 | agemos=[60,60], sex, height=[130,140], weight, measures=['whz'] | 'whz' not in result | Yes |
+| TC055 | WHZ only computed and set where height <121, NaN elsewhere | agemos=[60,60], height=[110,130], measures=['whz'] | 'whz' with NaN where >=121 | Yes |
 
 ##### Phase 2: Data Acquisition and Preprocessing (Now After Core)
 

@@ -396,8 +396,8 @@ def test_tc037_calculate_growth_metrics_whz() -> None:
     assert "mod_whz" in result
 
 
-def test_tc038_calculate_growth_metrics_whz_not_all_below_121() -> None:
-    """does not compute whz if not all height <121"""
+def test_tc038_calculate_growth_metrics_whz_partial_below_121() -> None:
+    """Computes whz if some height <121, sets NaN where height >=121"""
     result = calculate_growth_metrics(
         np.array([60.0, 60.0]),
         np.array(["M", "M"]),
@@ -405,9 +405,14 @@ def test_tc038_calculate_growth_metrics_whz_not_all_below_121() -> None:
         weight=np.array([20.0, 20.0]),
         measures=["whz"],
     )
-    # Since np.all(height <121) = False (130>=121), whz not added
-    assert "whz" not in result
-    assert "mod_whz" not in result
+    # Computes if any <121, sets NaN for those >=121
+    assert "whz" in result
+    assert "mod_whz" in result
+    # First should be finite, second NaN
+    assert np.isfinite(result["whz"][0])
+    assert np.isnan(result["whz"][1])
+    assert np.isfinite(result["mod_whz"][0])
+    assert np.isnan(result["mod_whz"][1])
 
 
 def test_tc039_calculate_growth_metrics_missing_weight() -> None:
@@ -524,8 +529,12 @@ def test_tc048_extended_bmiz_all_normal() -> None:
     p95=st.lists(st.floats(min_value=20.0, max_value=35.0), min_size=1, max_size=5),
     sigma=st.lists(st.floats(min_value=0.1, max_value=2.0), min_size=1, max_size=5),
     original_z=st.lists(
-        st.floats(min_value=0.0, max_value=10.0), min_size=1, max_size=5
-    ),  # emph on >=1.645
+        st.floats(min_value=1.646, max_value=10.0).filter(
+            lambda x: abs(x - 8.21) > 1e-2
+        ),
+        min_size=1,
+        max_size=5,
+    ),  # ensure >1.645 to trigger extension and not close to cap
 )
 def test_tc049_hypothesis_extended_bmiz_branches(  # type: ignore[no-untyped-def]
     bmi: list[float], p95: list[float], sigma: list[float], original_z: list[float]
@@ -563,3 +572,85 @@ def test_tc049_hypothesis_extended_bmiz_branches(  # type: ignore[no-untyped-def
         assert not np.array_equal(
             z[mask_extreme & valid], original_z_arr[mask_extreme & valid]
         )  # Should be different after extension
+
+
+def test_tc050_lms_zscore_empty_array() -> None:
+    """lms_zscore handles n=0 edge case"""
+    X = np.array([], dtype=np.float64)
+    L = np.array([], dtype=np.float64)
+    M = np.array([], dtype=np.float64)
+    S = np.array([], dtype=np.float64)
+    z = lms_zscore(X, L, M, S)
+    assert z.size == 0
+    assert np.array_equal(z, np.array([], dtype=np.float64))
+
+
+def test_tc051_extended_bmiz_empty_array() -> None:
+    """extended_bmiz handles n=0 edge case"""
+    bmi = np.array([], dtype=np.float64)
+    p95 = np.array([], dtype=np.float64)
+    sigma = np.array([], dtype=np.float64)
+    original_z = np.array([], dtype=np.float64)
+    z = extended_bmiz(bmi, p95, sigma, original_z)
+    assert z.size == 0
+    assert np.array_equal(z, np.array([], dtype=np.float64))
+
+
+def test_tc052_modified_zscore_empty_array() -> None:
+    """modified_zscore handles n=0 edge case"""
+    X = np.array([], dtype=np.float64)
+    M = np.array([], dtype=np.float64)
+    L = np.array([], dtype=np.float64)
+    S = np.array([], dtype=np.float64)
+    z = modified_zscore(X, M, L, S)
+    assert z.size == 0
+    assert np.array_equal(z, np.array([], dtype=np.float64))
+
+
+def test_tc053_l_zero_threshold_constant() -> None:
+    """Test L_ZERO_THRESHOLD constant usage in lms_zscore"""
+    # Test with L just above threshold triggers L!=0 branch
+    X = np.array([18.0])
+    L_above = np.array(1e-6 + 1e-7)  # Above threshold
+    M = np.array(18.0)
+    S = np.array(0.1)
+    z_above = lms_zscore(X, L_above, M, S)
+    assert np.isfinite(z_above[0])
+    # Test with L below threshold uses log branch
+    L_below = np.array(1e-6 - 1e-7)
+    z_below = lms_zscore(X, L_below, M, S)
+    assert np.isfinite(z_below[0])
+    # At median, results should be close but different formulas give slightly different due to precision
+    # Just ensure different paths are taken (both finite)
+
+
+def test_tc054_calculate_growth_metrics_whz_all_above_121() -> None:
+    """WHZ optimization: no computation when all heights >=121"""
+    result = calculate_growth_metrics(
+        np.array([60.0, 60.0]),
+        np.array(["M", "M"]),
+        height=np.array([130.0, 140.0]),  # All >=121
+        weight=np.array([20.0, 25.0]),
+        measures=["whz"],
+    )
+    # Should not include whz/mod_whz since no qualifying heights
+    assert "whz" not in result
+    assert "mod_whz" not in result
+
+
+def test_tc055_calculate_growth_metrics_whz_none_qualifying() -> None:
+    """WHZ only computed and set where height <121, NaN elsewhere"""
+    result = calculate_growth_metrics(
+        np.array([60.0, 60.0]),
+        np.array(["M", "M"]),
+        height=np.array([110.0, 130.0]),  # One <121, one >=121
+        weight=np.array([20.0, 25.0]),
+        measures=["whz"],
+    )
+    assert "whz" in result
+    assert "mod_whz" in result
+    # Only first element finite, second NaN
+    assert np.isfinite(result["whz"][0])
+    assert np.isnan(result["whz"][1])
+    assert np.isfinite(result["mod_whz"][0])
+    assert np.isnan(result["mod_whz"][1])

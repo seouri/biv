@@ -13,6 +13,9 @@ import numpy as np
 from numba import jit
 from scipy import stats
 
+# Constants
+L_ZERO_THRESHOLD = 1e-6
+
 
 @jit(nopython=True, cache=True)
 def lms_zscore(
@@ -49,6 +52,8 @@ def lms_zscore(
     Returns:
         Z-scores (population-standardized; 0 at median, ±2.0 ≈ 95th percentile tails)
     """
+    if X.size == 0:
+        return np.full_like(X, np.nan)
     # Flatten to 1D, compute, then reshape back
     original_shape = X.shape
     X_flat = X.ravel()
@@ -59,7 +64,7 @@ def lms_zscore(
     z_flat = np.full_like(X_flat, np.nan, dtype=np.float64)
 
     # Mask for L ≈ 0
-    mask_l_zero = np.abs(L_flat) < 1e-6
+    mask_l_zero = np.abs(L_flat) < L_ZERO_THRESHOLD
     mask_l_nonzero = ~mask_l_zero
 
     # For L ≈ 0
@@ -73,11 +78,7 @@ def lms_zscore(
 
     # For L != 0
     valid_l_nonzero = (
-        mask_l_nonzero
-        & np.isfinite(X_flat)
-        & np.isfinite(M_flat)
-        & (L_flat != 0)
-        & (S_flat > 0)
+        mask_l_nonzero & np.isfinite(X_flat) & np.isfinite(M_flat) & (S_flat > 0)
     )
     if np.any(valid_l_nonzero):
         numerator = (X_flat[valid_l_nonzero] / M_flat[valid_l_nonzero]) ** L_flat[
@@ -109,6 +110,8 @@ def extended_bmiz(
     Returns:
         Extended z-scores
     """
+    if original_z.size == 0:
+        return np.full_like(original_z, np.nan)
     z = np.full_like(original_z, np.nan)
 
     # Keep original for z <= 1.645
@@ -155,6 +158,8 @@ def modified_zscore(
     Returns:
         Modified z-scores (0 at median; 1 ≈ at z=2 tail)
     """
+    if X.size == 0:
+        return np.full_like(X, np.nan)
     original_shape = X.shape
     X_flat = X.ravel()
     L_flat = L.ravel()
@@ -167,14 +172,14 @@ def modified_zscore(
     valid = np.isfinite(X_flat) & np.isfinite(M_flat) & (S_flat > 0)
 
     # For L ≈ 0: simplified log case
-    mask_l_zero = valid & (np.abs(L_flat) < 1e-6)
+    mask_l_zero = valid & (np.abs(L_flat) < L_ZERO_THRESHOLD)
     if np.any(mask_l_zero):
         mod_z_flat[mask_l_zero] = np.log(X_flat[mask_l_zero] / M_flat[mask_l_zero]) / (
             S_flat[mask_l_zero] * z_tail
         )
 
     # For L != 0: use inverse LMS
-    mask_l_nonzero = valid & (np.abs(L_flat) >= 1e-6)
+    mask_l_nonzero = valid & (np.abs(L_flat) >= L_ZERO_THRESHOLD)
     if np.any(mask_l_nonzero):
         # Positive tail: BMI at z=z_tail
         term_pos = 1.0 + L_flat[mask_l_nonzero] * S_flat[mask_l_nonzero] * z_tail
@@ -189,8 +194,8 @@ def modified_zscore(
         )
 
         # Semi-deviations
-        sd_pos = 0.5 * (bmi_z_pos - M_flat[mask_l_nonzero])
-        sd_neg = 0.5 * (M_flat[mask_l_nonzero] - bmi_z_neg)
+        sd_pos = bmi_z_pos - M_flat[mask_l_nonzero]
+        sd_neg = M_flat[mask_l_nonzero] - bmi_z_neg
 
         # Classify as above, below, or at median
         X_masked = X_flat[mask_l_nonzero]
@@ -352,17 +357,28 @@ def calculate_growth_metrics(
         result["_bivbmi"] = biv_bmi_flag
 
     # For weight-for-length (wlz) or weight-for-height (whz), need length <121cm
-    # But simplified to WLH if height <121
-    if height is not None and weight is not None and np.all(height < 121):
-        if "wlz" in measures or "whz" in measures:
-            wlh_z = lms_zscore(weight, mock_L, mock_M, mock_S)
-            # Suppose similar thresholds
-            mod_wlh_z = modified_zscore(weight, mock_M, mock_L, mock_S)
-            result["whz"] = wlh_z  # or wlz
-            result["mod_whz"] = mod_wlh_z
-            # Flags for WHZ: < -4 or >8
-            whz_biv = (mod_wlh_z < -4.0) | (mod_wlh_z > 8.0)
-            whz_biv = np.where(np.isnan(mod_wlh_z), False, whz_biv)
+    # Optimized to compute only on qualifying heights (< 121 cm)
+    if height is not None and weight is not None:
+        qualifying = height < 121
+        if np.any(qualifying):
+            if "wlz" in measures or "whz" in measures:
+                weight_q = weight[qualifying]
+                mock_L_q = mock_L[qualifying]
+                mock_M_q = mock_M[qualifying]
+                mock_S_q = mock_S[qualifying]
+
+                wlh_z_q = lms_zscore(weight_q, mock_L_q, mock_M_q, mock_S_q)
+                mod_wlh_z_q = modified_zscore(weight_q, mock_M_q, mock_L_q, mock_S_q)
+
+                # Create full arrays with NaN, assign computed values where qualifying
+                wlh_z = np.full_like(weight, np.nan, dtype=np.float64)
+                wlh_z[qualifying] = wlh_z_q
+                mod_wlh_z = np.full_like(weight, np.nan, dtype=np.float64)
+                mod_wlh_z[qualifying] = mod_wlh_z_q
+
+                result["whz"] = wlh_z  # or wlz
+                result["mod_whz"] = mod_wlh_z
+                # No BIV flags for WHZ in this version
 
     return result
 
