@@ -269,22 +269,13 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 - `tests/methods/test_zscore/test_zscore_detector.py`: Comprehensive tests covering z-score calculations against reference data, abnormal range flagging, and edge cases.
 - `tests/conftest.py`: Additional fixtures for anthropometric z-score specific edge cases (e.g., different sexes, ages, NaNs).
 
-**Checklist** (Follow `tdd_guide.md` for each atomic behavior, per architecture.md interface contract and README.md zscore method):
-- [x] Create and switch to a branch for Phase 4 (e.g., `git checkout -b phase-4-zscore`).
-- [x] Confirm requirements and generate test case table for ZScoreDetector behaviors. Calculates growth-specific z-scores using sex and age from WHO/CDC reference data, flags BIVs using modified z-scores with fixed cutoffs. Requires 'sex' and 'age' columns in DataFrame; z-scores calculated per row. *Note: Human confirmed; BIV cutoffs based on modified z-scores:
+**Checklist**: (Detailed implementation follows the phased plan in 'zscore_implementation_plan.md' for ZScoreDetector to ensure proper tracking of progress.)
 
-- Weight-for-age: < -5 or > 8
-- Height-for-age: < -5 or > 4
-- Weight-for-height: < -4 or > 8
-- BMI-for-age: < -4 or > 8
-- Head circumference-for-age: < -5 or > 5*
-
-- [x] Add pydantic config model for zscore parameters (indicator, with defaults). *Note: ZScoreConfig model with indicator (str) for anthropometric indicator, requires 'sex' and 'age' columns in DataFrame for reference data lookup.*
-- [x] Red-Green-Refactor for core tests in `tests/methods/test_zscore/test_zscore_detector.py` (e.g., `detect` for z-score calculation and abnormal flagging per range, handling NaNs as False). *Note: Cycle complete; wrote failing tests, implemented detect using WHO/CDC reference calculations, flag when z outside specified abnormal bounds.*
-- [x] Implement `biv/methods/zscore/detector.py` (subclass `BaseDetector` with pydantic config, WHO/CDC data integration for z-score computation and range-based flagging). *Note: Tests passing? Anthropometric z-score logic complete.*
-- [x] Red-Green-Refactor for additional cases: Missing sex/age columns, invalid indicator, out of reference range ages, NaN handling, config validation. *Note: Cycles complete; edge tests for reference boundary handling, data validation errors.*
-- [x] Integrate reference data: Use WHO/CDC growth standards (e.g., via pyzst or similar libraries if available, or integrated data). *Note: If external lib needed, add dependency.*
-- [x] Refactor: Optimize for performance with vectorized operations, handle large datasets; run quality checks. *Note: Linting passes.*
+- [x] **Phase 4.1: Core Z-Score Calculation Functions** - Implement vectorized LMS-based Z-Score, modified Z-Score, and interpolation functions in `biv.zscores.py` for reusability. Ensure scientific accuracy against WHO/CDC standards. (Completed as per zscore_plan.md)
+- [ ] **Phase 4.2: Data Acquisition and Preprocessing** - Acquire, preprocess, and store WHO/CDC growth standards data securely for Z-Score calculations.
+- [ ] **Phase 4.3: ZScoreDetector Class Implementation** - Implement ZScoreDetector inheriting BaseDetector, with Pydantic config, auto-registry, and integration calls to calculate_growth_metrics.
+- [ ] **Phase 4.4: Integration with BIV API and Testing** - Integrate ZScoreDetector into biv.detect/remove with full API support, add comprehensive tests.
+- [ ] **Phase 4.5: Performance Optimization and Finalization** - Optimize for scalability, add telemetry, finalize with benchmarks and docs.
 
 **Dependencies**: Phase 3 (enhancements, including auto-registry for easy integration).
 
@@ -292,8 +283,8 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 - For ZScore: "Should threshold be fixed at 3, or init-param only?"
 
 **Milestones/Tests**:
-- [x] `uv run pytest tests/methods/test_zscore/test_zscore_detector.py` passes.
-- [x] `uv run ruff check biv/methods/zscore/detector.py` passes.
+- [ ] `uv run pytest tests/methods/test_zscore/test_zscore_detector.py` passes. *Note: To be completed upon full implementation of ZScoreDetector in Phase 4.5.*
+- [ ] `uv run ruff check biv/methods/zscore/detector.py` passes. *Note: To be completed upon full implementation of ZScoreDetector in Phase 4.5.*
 
 **Upon Phase Completion**: Update all checkboxes above as [x], add summary notes (e.g., "Phase 4 done: ZScoreDetector ready"), commit the updated plan, and proceed to Phase 5. *Strong Reminder: Do not skip this!*
 
