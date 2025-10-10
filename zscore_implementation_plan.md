@@ -283,6 +283,7 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC053 | L_ZERO_THRESHOLD constant usage in lms_zscore | L above/below threshold | Different branches taken | No |
 | TC054 | WHZ optimization: no computation when all heights >=121 | agemos=[60,60], sex, height=[130,140], weight, measures=['whz'] | 'whz' not in result | Yes |
 | TC055 | WHZ only computed and set where height <121, NaN elsewhere | agemos=[60,60], height=[110,130], measures=['whz'] | 'whz' with NaN where >=121 | Yes |
+| TC056 | Validate modified_zscore with exact CDC examples from 'modified-z-scores.md' | BMI=333, L=-2.18, M=20.76, S=0.148; BMI=12, same LMS | mod_z≈49.42; mod_z≈-4.13 | No |
 
 ##### Phase 2: Data Acquisition and Preprocessing (Now After Core)
 

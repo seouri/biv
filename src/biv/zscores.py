@@ -156,7 +156,7 @@ def modified_zscore(
         z_tail: Tail z-score for SD (default 2.0; robustness tested to [1.5,3.0])
 
     Returns:
-        Modified z-scores (0 at median; 1 ≈ at z=2 tail)
+        Modified z-scores (0 at median; 2 ≈ at z=2 tail)
     """
     if X.size == 0:
         return np.full_like(X, np.nan)
@@ -193,9 +193,9 @@ def modified_zscore(
             term_neg ** (1.0 / L_flat[mask_l_nonzero])
         )
 
-        # Semi-deviations
-        sd_pos = bmi_z_pos - M_flat[mask_l_nonzero]
-        sd_neg = M_flat[mask_l_nonzero] - bmi_z_neg
+        # Semi-deviations: half the distance per modified z-score definition
+        sd_pos = 0.5 * (bmi_z_pos - M_flat[mask_l_nonzero])
+        sd_neg = 0.5 * (M_flat[mask_l_nonzero] - bmi_z_neg)
 
         # Classify as above, below, or at median
         X_masked = X_flat[mask_l_nonzero]

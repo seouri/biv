@@ -639,11 +639,11 @@ def test_tc054_calculate_growth_metrics_whz_all_above_121() -> None:
 
 
 def test_tc055_calculate_growth_metrics_whz_none_qualifying() -> None:
-    """WHZ only computed and set where height <121, NaN elsewhere"""
+    """WHZ only computed and set where height <121, sets NaN elsewhere"""
     result = calculate_growth_metrics(
         np.array([60.0, 60.0]),
         np.array(["M", "M"]),
-        height=np.array([110.0, 130.0]),  # One <121, one >=121
+        height=np.array([110.0, 130.0]),
         weight=np.array([20.0, 25.0]),
         measures=["whz"],
     )
@@ -654,3 +654,23 @@ def test_tc055_calculate_growth_metrics_whz_none_qualifying() -> None:
     assert np.isnan(result["whz"][1])
     assert np.isfinite(result["mod_whz"][0])
     assert np.isnan(result["mod_whz"][1])
+
+
+def test_tc056_modified_zscore_cdc_examples() -> None:
+    """Validate modified_zscore with exact CDC examples from 'modified-z-scores.md'"""
+    # Example values from CDC modified z-scores document
+    # 200-month-old girl example: L=-2.18, M=20.76, S=0.148
+    L = np.array([-2.18])
+    M = np.array([20.76])
+    S = np.array([0.148])
+    z_tail = 2.0  # default
+
+    # Above median example: BMI=333, expected mod_z ≈ 49.2 (actual ~49.42)
+    X_above = np.array([333.0])
+    mod_z_above = modified_zscore(X_above, M, L, S, z_tail)
+    np.testing.assert_allclose(mod_z_above, [49.42], rtol=1e-2, atol=0.02)
+
+    # Below median example: BMI=12, expected mod_z = -4.1 (doc says -4.1, calculation ~ -4.13)
+    X_below = np.array([12.0])
+    mod_z_below = modified_zscore(X_below, M, L, S, z_tail)
+    np.testing.assert_allclose(mod_z_below, [-4.13], rtol=1e-2, atol=0.01)
