@@ -202,46 +202,7 @@ Identifies and removes BIVs, replacing them with `numpy.nan`. It accepts the sam
 
 ## Contributing
 
-Contributions are welcome! We follow Test-Driven Development (TDD) practices as outlined in [`tdd_guide.md`](tdd_guide.md). For an overview of the package's architecture, see [`architecture.md`](architecture.md). Please submit an issue or pull request to the [GitHub repository](https://github.com/seouri/biv).
-
-### Development Setup
-
-To set up the development environment for the first time after cloning this repository:
-
-1. **Prerequisites**:
-   - Python 3.13 or later installed
-   - `uv` installed (see [uv documentation](https://docs.astral.sh/uv/getting-started/installation/) for installation instructions)
-
-2. **Clone the repository**:
-   ```sh
-   git clone https://github.com/seouri/biv.git
-   cd biv
-   ```
-
-3. **Install dependencies**:
-   ```sh
-   uv sync
-   ```
-   This installs all project dependencies (main and development) and activates the virtual environment.
-
-4. **Install pre-commit hooks**:
-   ```sh
-   uv run pre-commit install
-   ```
-   This sets up local pre-commit hooks that match the CI checks (linting, formatting, type checking, and testing). Hooks run automatically on each commit to ensure code quality.
-
-5. **Verify setup**:
-   Run the full test suite locally to ensure everything works:
-   ```sh
-   uv run pytest --cov
-   ```
-   You should see all tests pass with sufficient coverage.
-
-### Development Workflow
-
-- Follow TDD practices as described in [`tdd_guide.md`](tdd_guide.md).
-- Pre-commit hooks will automatically run checks before each commit, matching GitHub Actions CI.
-- Push your feature branch and create a pull request. CI will verify all checks pass.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, development workflow, and guidelines.
 
 
 ## License
