@@ -287,10 +287,23 @@ This phased plan ensures incremental, testable development per TDD, with full in
 
 ##### Phase 2: Data Acquisition and Preprocessing (Now After Core)
 
-**Objective**: Acquire, preprocess, and store WHO/CDC growth standards data securely for Z-Score calculations. Ensures data integrity, provenance, and offline accessibility. (Extended testing with mocks for independence from live downloads.)
+**Objective**: Acquire, preprocess, and store WHO/CDC growth standards data securely for Z-Score calculations. Ensures data integrity, provenance, and offline accessibility. (Extended testing with mocks for independence from live downloads.) Utilizes the following sources for data fetching:
+- **CDC Data**: CDC 2000 Growth Charts, 2 to 20 years:
+  - Weight-for-age charts: https://www.cdc.gov/growthcharts/data/zscore/wtage.csv
+  - Stature-for-age charts: https://www.cdc.gov/growthcharts/data/zscore/statage.csv
+  - BMI-for-age charts: https://www.cdc.gov/growthcharts/data/zscore/bmiagerev.csv
+- **WHO Data**: WHO Child Growth Standards (2006), Birth to 24 Months:
+  - Weight-for-age charts, Boys: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Boys-Weight-for-age-Percentiles.csv
+  - Weight-for-age charts, Girls: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Girls-Weight-for-age%20Percentiles.csv
+  - Length-for-age charts, Boys: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Boys-Length-for-age-Percentiles.csv
+  - Length-for-age charts, Girls: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Girls-Length-for-age-Percentiles.csv
+  - Weight-for-length charts, Boys: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Boys-Weight-for-length-Percentiles.csv
+  - Weight-for-length charts, Girls: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Girls-Weight-for-length-Percentiles.csv
+  - Head circumference-for-age charts, Boys: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Boys-Head-Circumference-for-age-Percentiles.csv
+  - Head circumference-for-age charts, Girls: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Girls-Head-Circumference-for-age-Percentiles.csv
 
 **Checklist** (Follow `tdd_guide.md` Red-Green-Refactor per atomic behavior; confirm with human after cycles):
-- [ ] Create `biv/scripts/download_data.py`: Script to fetch CSV files from WHO/CDC sources over HTTPS with SSL verification, parse to NumPy arrays, compute SHA-256 hashes, and save as .npz in `biv/data/` (git-ignored).
+- [ ] Create `biv/scripts/download_data.py`: Script to fetch CSV files from above WHO/CDC sources over HTTPS with SSL verification, parse to NumPy arrays, compute SHA-256 hashes, and save as .npz in `biv/data/` (git-ignored).
 - [ ] Implement data validation: Assert array shapes, monotonic age increments, and version hashes for security; log warnings on mismatches but allow fallback to cached data.
 - [ ] Add retry logic with backoff (e.g., requests with tenacity) for network robustness; include metadata with URLs, timestamps, and hashes.
 - [ ] Test script integration: Standalone TDD cycles for CSV parsing, .npz creation, and validation; ensure WHO/CDC boundary handling (24 months cutoff by validating separate datasets for <24mo vs >=24mo).
