@@ -20,7 +20,7 @@ To calculate the z-score for any BMI value with the LMS method, the following fo
 BMIz = \frac{\left( \frac{BMI}{M} \right)^L - 1}{L \times S} \tag{Equation 1}
 ```
 
-Values for the $L$, $M$, and $S$ are available on the [CDC website](https://www.cdc.gov/growthcharts/cdc-data-files.htm) for each sex and month of age. Values for the exponent, '$L$' in equation #1 are negative at all ages and range from –3.4 to –1.0.
+Values for the $L$, $M$, and $S$ are available on the [CDC website](https://www.cdc.gov/growthcharts/cdc-data-files.htm) for each sex and month of age. Values for the exponent, $L$ in equation #1 are negative at all ages and range from –3.4 to –1.0.
 
 ## Limitations of LMS-Based Z-Scores
 
@@ -45,9 +45,6 @@ First, one would calculate the BMI values associated with z-scores of 0 and 2 to
 ```math
 BMI = M \times [1 + L \times S \times z]^{(1/L)} \tag{Equation 2}
 ```
-
-(Equation 2)
-
 in which 'z' represents the z-score of interest. A z-score of 0 is simply the median at that sex/age, and in this case, the BMI is 20.76 kg/m². When $z = 0$, $L \times S \times z$ is 0. 
 
 The BMI calculation for a z-score of 2 uses the [L, M, and S values](https://www.cdc.gov/growthcharts/cdc-data-files.htm). For this 200-month-old girl, $L = −2.18$, $M = 20.76$, and $S = 0.148$. The BMI associated with a z-score of +2.0 would then be (from equation #2):
