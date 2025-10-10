@@ -98,8 +98,8 @@ If necessary, change this statement to point at the folder or directory containi
 
 The LMS (lambda, mu, sigma) method calculates BMI z-scores as:
 
-```
-Z-score = ((BMI / M)^L - 1) / (L × S) [equation 1]
+```math
+\text{Z-score} = \frac{\left( \frac{BMI}{M} \right)^L - 1}{L \times S} \tag{Equation 1}
 ```
 
 The L (transformation for normality), M (median), and S (coefficient of variation) values for the CDC growth charts, which vary by sex and month of age, are in `CDCref_d.sas7bdat`. These z-scores are then transformed into percentiles with the SAS `probnorm` function. For example, a z-score of 1.645 is the 95th percentile. For more information on the LMS method, developed by Tim Cole and P.J Greene in the 1990s, see:
