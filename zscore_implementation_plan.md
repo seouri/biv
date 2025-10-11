@@ -306,6 +306,11 @@ This phased plan ensures incremental, testable development per TDD, with full in
   - Head circumference-for-age charts, Boys: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Boys-Head-Circumference-for-age-Percentiles.csv
   - Head circumference-for-age charts, Girls: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Girls-Head-Circumference-for-age-Percentiles.csv
 
+Detailed instructions and methodologies for CDC growth charts are documented in the `docs/cdc/` directory:
+- [CDC Growth Charts SAS Program](docs/cdc/cdc_growth_charts.md) - Includes CDC's Extended BMI-for-Age Growth Charts
+- [Modified Z-Scores](docs/cdc/modified-z-scores.md) - Data Quality Assessment on Anthropometry Data
+- [Extended CDC BMI-for-Age Growth Charts](docs/cdc/cdc-extended-bmi-for-age-growth-charts.md) - Data File for the Extended CDC BMI-for-age Growth Charts for Children and Adolescents
+
 **Checklist** (Follow `tdd_guide.md` Red-Green-Refactor per atomic behavior; confirm with human after cycles):
 - [ ] Create `biv/scripts/download_data.py`: Script to fetch CSV files from above WHO/CDC sources over HTTPS with SSL verification, parse to NumPy arrays, compute SHA-256 hashes, and save as .npz in `biv/data/` (git-ignored).
 - [ ] Implement data validation: Assert array shapes, monotonic age increments, and version hashes for security; log warnings on mismatches but allow fallback to cached data.
