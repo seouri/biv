@@ -284,6 +284,9 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC054 | WHZ optimization: no computation when all heights >=121 | agemos=[60,60], sex, height=[130,140], weight, measures=['whz'] | 'whz' not in result | Yes |
 | TC055 | WHZ only computed and set where height <121, NaN elsewhere | agemos=[60,60], height=[110,130], measures=['whz'] | 'whz' with NaN where >=121 | Yes |
 | TC056 | Validate modified_zscore with exact CDC examples from 'modified-z-scores.md' | BMI=333, L=-2.18, M=20.76, S=0.148; BMI=12, same LMS | mod_z≈49.42; mod_z≈-4.13 | No |
+| TC057 | Test with CDC extended BMI example below 95th percentile |Girl aged 9y6m (114.5mo), BMI=21.2, L=-2.257782149, M=16.57626713, S=0.132796819 | z=1.4215 | No |
+| TC058 | Test with CDC extended BMI example above 95th percentile |Boy aged 4y2m (50.5mo), BMI=22.6, P95=17.8219, sigma=2.3983 | z=2.83 | No |
+| TC059 | Test full BMI z-score with extension using CDC example values |Girl 114.5mo, BMI=21.2 <P95, LMS z <1.645, extend returns original | z=1.4215, no extension | No |
 
 ##### Phase 2: Data Acquisition and Preprocessing (Now After Core)
 
@@ -292,6 +295,7 @@ This phased plan ensures incremental, testable development per TDD, with full in
   - Weight-for-age charts: https://www.cdc.gov/growthcharts/data/zscore/wtage.csv
   - Stature-for-age charts: https://www.cdc.gov/growthcharts/data/zscore/statage.csv
   - BMI-for-age charts: https://www.cdc.gov/growthcharts/data/zscore/bmiagerev.csv
+  - Extended BMI-for-age charts: https://www.cdc.gov/growthcharts/data/extended-bmi/bmi-age-2022.csv
 - **WHO Data**: WHO Child Growth Standards (2006), Birth to 24 Months:
   - Weight-for-age charts, Boys: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Boys-Weight-for-age-Percentiles.csv
   - Weight-for-age charts, Girls: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Girls-Weight-for-age%20Percentiles.csv

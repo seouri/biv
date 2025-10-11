@@ -674,3 +674,55 @@ def test_tc056_modified_zscore_cdc_examples() -> None:
     X_below = np.array([12.0])
     mod_z_below = modified_zscore(X_below, M, L, S, z_tail)
     np.testing.assert_allclose(mod_z_below, [-4.13], rtol=1e-2, atol=0.01)
+
+
+def test_tc057_cdc_extended_example_below_95th() -> None:
+    """TC057: Test with CDC extended BMI example below 95th percentile"""
+    # Example from CDC doc: Girl aged 9 years and 6 months (114.5 months) with BMI = 21.2
+    # Below 95th percentile (P95 = 22.3979), so use LMS z-score formula
+    # L = -2.257782149, M = 16.57626713, S = 0.132796819, expected z = 1.4215
+
+    X = np.array([21.2])
+    L_arr = np.array([-2.257782149])
+    M_arr = np.array([16.57626713])
+    S_arr = np.array([0.132796819])
+
+    z = lms_zscore(X, L_arr, M_arr, S_arr)
+    np.testing.assert_allclose(z, [1.4215], atol=1e-3)
+
+
+def test_tc058_cdc_extended_example_above_95th() -> None:
+    """TC058: Test with CDC extended BMI example above 95th percentile"""
+    # Example from CDC doc: Boy aged 4 years and 2 months (50.5 months) with BMI = 22.6
+    # Above 95th percentile (P95 = 17.8219), sigma = 2.3983
+    # percentile = 90 + 10 * Φ((22.6 - 17.8219)/2.3983) ≈ 99.7683
+    # z-score = Φ⁻¹(99.7683/100) ≈ 2.83
+
+    bmi = np.array([22.6])
+    p95 = np.array([17.8219])
+    sigma = np.array([2.3983])
+    original_z = np.array([2.0])  # > 1.645 to trigger extension
+
+    z = extended_bmiz(bmi, p95, sigma, original_z)
+    np.testing.assert_allclose(z, [2.83], atol=1e-2)
+
+
+def test_tc059_cdc_extended_lms_example_full() -> None:
+    """TC059: Test full BMI z-score with extension using CDC example values"""
+    # Use the girl example: BMI = 21.2 below P95, so should use LMS directly and extended should not activate
+    # For testing purposes, compute LMS z-score, then pass to extended_bmiz - should return original since < 1.645
+
+    X = np.array([21.2])
+    L_arr = np.array([-2.257782149])
+    M_arr = np.array([16.57626713])
+    S_arr = np.array([0.132796819])
+    p95 = np.array([22.3979])  # From doc
+    sigma = np.array([2.0])  # Approximation, since not given for girl
+
+    # First compute LMS z
+    original_z = lms_zscore(X, L_arr, M_arr, S_arr)
+    assert original_z[0] < 1.645  # Confirm below threshold
+
+    # Then extend (should not change since < 1.645)
+    z_extended = extended_bmiz(X, p95, sigma, original_z)
+    np.testing.assert_allclose(z_extended, original_z, atol=1e-6)
