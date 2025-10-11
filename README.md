@@ -177,10 +177,16 @@ Identifies BIVs and returns a DataFrame with added boolean flag columns.
         - BMI-for-age: <-4 or >8
         - Head circumference-for-age: <-5 or >5
 
-        For reproducibility, ZScoreDetector uses WHO/CDC reference data:
+
+        Z-score calculations strictly follow CDC methods. For reproducibility, ZScoreDetector uses WHO/CDC reference data:
         - WHO Child Growth Standards (2006) for ages <24 months: https://www.cdc.gov/growthcharts/who-data-files.htm
         - CDC 2000 Growth Charts for ages ≥24 months: https://www.cdc.gov/growthcharts/cdc-data-files.htm
         Data is cached locally in the `data/` subdirectory as .npz files.
+
+        **References**:
+        - [CDC Growth Charts SAS Program](docs/cdc/cdc_growth_charts.md) - Includes CDC's Extended BMI-for-Age Growth Charts
+        - [Modified Z-Scores](docs/cdc/modified-z-scores.md) - Data Quality Assessment on Anthropometry Data
+        - [Extended CDC BMI-for-Age Growth Charts](docs/cdc/cdc-extended-bmi-for-age-growth-charts.md) - Data File for the Extended CDC BMI-for-age Growth Charts for Children and Adolescents
 
         Optional columns: 'head_circ_cm' for head circumference measurements.
             
