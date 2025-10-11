@@ -1,4 +1,4 @@
-# Data File for the Extended CDC BMI-for-age Growth Charts for Children and Adolescents
+# [Data File for the Extended CDC BMI-for-age Growth Charts for Children and Adolescents](https://www.cdc.gov/growthcharts/extended-bmi-data-files.htm)
 
 The Extended CDC BMI-for-age growth charts use a new method for calculating BMI percentiles and z-scores above the 95th percentile. BMI percentiles and z-scores up to the 95th percentile (z-score 1.645) are the same as those in the 2000 CDC BMI-for-age growth charts and the $L$, $M$, $S$ parameters, selected percentiles (3rd, 5th, 10th, 25th, 50th, 75th, 85th, 90th, 95th), and z-scores (-2, -1.5, -.5, 0, .5, 1, 1.5) are identical to those in the data files for the CDC 2000 BMI-for-age growth charts. Newly developed percentiles above the 95th percentile up to the 99.99th percentile (z-scores up to 5), and LMS and $sigma$ parameters for the Extended CDC BMI-for-age growth charts are contained in the following data files.
 
