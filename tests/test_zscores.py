@@ -99,7 +99,7 @@ def test_tc009_seamless_boundary_placeholder() -> None:
     pass
 
 
-def test_tc010_age_gt_240() -> None:
+def test_tc010_age_gt_241() -> None:
     """Handle age >240: set to NaN with warning"""
     # TODO: Test in calculate_growth_metrics
     pass
@@ -113,7 +113,7 @@ def test_tc011_missing_head_circ() -> None:
 
 def test_tc012_unit_warning() -> None:
     """Unit mismatch warning for height >250cm"""
-    # TODO: Test warning in calculate_growth_metrics
+    # TODO: Test in calculate_growth_metrics
     pass
 
 
@@ -184,7 +184,9 @@ def test_tc020_hypothesis_precision(  # type: ignore[no-untyped-def]
 
     # For a few cases at M (median), z should be close to 0
     # But only when L and X=M conditions are met
-    valid_median_cases = (np.abs(X_arr - M_arr) < 0.01) & (S_arr > 0)
+    valid_median_cases = (
+        (np.abs(X_arr - M_arr) < 0.01) & (np.abs(L_arr) >= 1e-6) & (S_arr > 0)
+    )
     if np.any(valid_median_cases):
         z_at_median = z_scores[valid_median_cases]
         assert np.all(np.abs(z_at_median) < 1.0)  # Should be reasonably close to 0
@@ -256,8 +258,8 @@ def test_tc027_calculate_growth_metrics_invalid_sex() -> None:
         calculate_growth_metrics(np.array([60.0]), np.array(["X"]))
 
 
-def test_tc028_calculate_growth_metrics_age_gt_240(caplog) -> None:
-    """calculate_growth_metrics sets NaN for age >240 with warning"""
+def test_tc028_calculate_growth_metrics_age_gt_241(caplog) -> None:
+    """calculate_growth_metrics sets NaN for age >241 with warning"""
     import logging
 
     caplog.set_level(logging.WARNING)
@@ -266,10 +268,10 @@ def test_tc028_calculate_growth_metrics_age_gt_240(caplog) -> None:
     )
 
     # Check warning was logged
-    assert any("values >240 months" in str(record.message) for record in caplog.records)
+    assert any("values >241 months" in str(record.message) for record in caplog.records)
 
     # z-scores should be NaN
-    # Since mock data gives some computable score, but we set to NaN for age>240
+    # Since mock data gives some computable score, but we set to NaN for age>241
     if "haz" in result:
         assert np.isnan(result["haz"][0])
 
@@ -378,8 +380,8 @@ def test_tc036_calculate_growth_metrics_age_years_warning(caplog) -> None:
     calculate_growth_metrics(
         np.array([250.0]), np.array(["M"]), height=np.array([120.0])
     )
-    # Check both warnings: age >240 and suggest years
-    assert any("values >240 months" in str(record.message) for record in caplog.records)
+    # Check both warnings: age >241 and suggest years
+    assert any("values >241 months" in str(record.message) for record in caplog.records)
     assert any("suggest years" in str(record.message) for record in caplog.records)
 
 

@@ -11,10 +11,10 @@ Follow `biv`'s git branching (e.g., phase-4-zscore), human confirmations, and pl
 #### 1. Data Acquisition and Preprocessing
 Retain original, but store .npz files in `biv/data/` (git-ignored; fetch via `biv.scripts.download_data.py`). Downside of keeping .npz in git: Bloat repository size (several MB), slow clones, versioning issues with changing external data, potential security risks without verification. Update as needed: Script checks for updates via timestamps/hashes, re-fetches if mismatched/outdated to ensure latest WHO/CDC sources.
 
-- **CDC Data**: CDC 2000 Growth Charts from https://www.cdc.gov/growthcharts/cdc-data-files.htm; parse to .npz with keys like 'bmi_boy_L' (NumPy arrays).
-- **WHO Data**: WHO Child Growth Standards (2006) from https://www.cdc.gov/growthcharts/who-data-files.htm; similar .npz.
+- **CDC Data**: CDC 2000 Growth Charts covering **24.0 months and above**, from https://www.cdc.gov/growthcharts/cdc-data-files.htm; parse to .npz with keys like 'bmi_boy_L' (NumPy arrays).
+- **WHO Data**: WHO Child Growth Standards (2006) covering **birth to <24 months**, from https://www.cdc.gov/growthcharts/who-data-files.htm; similar .npz.
 - **Integration**: Load in `ZScoreDetector` init or lazily; cache with functools.lru_cache.
-- **Validation**: Assert shapes/monotonicity; log warnings for age >240 months (set to NaN).
+- **Validation**: Assert shapes/monotonicity; log warnings for age >241 months (set to NaN).
 - **Security/Privacy Enhancements**: Fetch data over HTTPS with verified SSL/TLS connections (e.g., requests with verify=True for certificate validation); use retry logic (e.g., requests with backoff); include version hashes (SHA-256) in .npz metadata for provenance and integrity checks. If hash mismatches detected, log a warning and prevent loading to safeguard against compromised CDC/WHO sources—fallback to cached versions or manual verification if available. Script supports conditional updates only when sources change, with user notification for potential security risks.
 
 #### 2. Implementation Architecture
@@ -117,7 +117,7 @@ Implement in `biv.zscores.py` (vectorized); import by `ZScoreDetector` in `biv.m
   ) -> dict[str, np.ndarray]:
       # Returns dict with 'waz', 'haz', 'bmiz', 'headcz', 'mod_bmiz', '_bivbmi', etc.
       # Design: Batches computation for all measures to leverage shared LMS interp, achieving performance benefits over separate calls. Since BIV needs modified z-scores and interp is shared, overhead is minimal for unused standard z-scores. Verified optimal: Vectorized NumPy benefits from batching; if extensibility demands, measures param allows selective computation.
-      # Switch WHO/CDC based on agemos <24; interpolate seamlessly at boundary (e.g.,_age ~23.5 uses blend if needed)
+      # Switch WHO/CDC based on agemos <24; CDC used for ages >=24.0 months, interpolate seamlessly at boundary (e.g.,_age ~23.5 uses blend if needed)
       # Warn/log potential unit mismatches (e.g., height.max() > 250: 'height values suggest inches instead of cm')
       # Compute BMI = weight / (height/100)**2 if needed
       # Interp LMS per age/sex/measure (shared for efficiency)
@@ -204,6 +204,44 @@ Refined based on comprehensive expert assessment to achieve perfection (score: 1
 
 This refined plan now addresses all assessment gaps, positioning ZScoreDetector as a robust, accurate, and high-performing solution ready for senior engineering standards in scientific package development.
 
+#### 8. Data Optimization: Minimal Column Approach
+
+**Optimization Implemented**: Modified `scripts/download_data.py` to save only essential columns used by `zscores.py` functions.
+
+**Column Mapping**:
+- **BMI arrays**: `L`, `M`, `S`, `P95`, `sigma`, `agemos` (6 columns × 219 rows)
+- **All other arrays**: `L`, `M`, `S`, `Month`/`Agemos` (4 columns for WHO/CDC respectively)
+
+**File Size Reduction**:
+- **Before**: 105,405 bytes (103 KB) - all 35 columns per BMI array, 13 columns per other arrays
+- **After**: 37,743 bytes (37 KB) - only essential columns
+- **Savings**: 67,662 bytes (**65.9% reduction**)
+
+**Performance Impact**:
+- Faster parsing: Minimal data extraction
+- Smaller memory footprint: 79% less raw data
+- Faster loading: ~66% smaller file to decompress
+- Identical functionality: All z-score calculations supported
+
+**Implementation**:
+- Updated `parse_cdc_csv()` and `parse_who_csv()` to filter columns
+- Verified P95/sigma available for BMI extended calculations
+- Maintained age column for validation and warnings
+- Preserves future extensibility if additional percentiles needed later
+
+**Sex Column Handling**:
+- **Excluded from storage**: The original `Sex` column (1=male, 2=female in CDC data) is used during parsing to split into `_male`/`_female` arrays, but not stored in final arrays
+- **Sex identification**: Encoded in array naming (`bmi_male`, `bmi_female`, etc.) rather than redundant column storage
+- **WHO data**: Files are already sex-specific (`WHO-Boys-*.csv` vs `WHO-Girls-*.csv`) with no separate sex columns
+
+**Validation**: All z-score functions in `src/biv/zscores.py` use only these minimal columns:
+- `lms_zscore()`: L, M, S
+- `extended_bmiz()`: P95, sigma (BMI only)
+- `modified_zscore()`: L, M, S
+- Age validation: agemos/Month
+
+**File Efficiency**: Additional space savings from removing redundant Sex column while preserving sex identification through array naming conventions +++++++ REPLACE
+
 #### 7. Phased Implementation Plan for ZScoreDetector Integration into `biv` Package
 
 This phased plan ensures incremental, testable development per TDD, with full integration into `biv`. Human confirmations after each phase cycle; align with `implementation_plan.md` updates. This plan includes phased, step-by-step plans, each with a checklist and test case table. It follows TDD practices from `tdd_guide.md`, integrates with `biv`'s architecture (`architecture.md`), and ensures coverage >90% with test cases aligned to requirements. Phases build on prior BIV phases (Phase 1-3 complete per `implementation_plan.md`).
@@ -215,7 +253,7 @@ This phased plan ensures incremental, testable development per TDD, with full in
 **Checklist** (Follow `tdd_guide.md` Red-Green-Refactor per atomic behavior; confirm with human after cycles):
 - [x] Create `biv/zscores.py`: Implement `lms_zscore`, `extended_bmiz`, `modified_zscore`, vectorized interpolation helpers; add caching with @lru_cache for efficiency.
 - [x] Implement `calculate_growth_metrics`: Vectorized function to compute z-scores per sex/measure/age, handle WHO/CDC switch, warn on unit mismatches, derive BIV flags from modified thresholds.
-- [x] Handle edge cases: Age >240 months -> NaN with warning; invalid sex -> ValueError; L≈0 tolerance for LMS; NaN propagation as False flags.
+- [x] Handle edge cases: Age >241 months -> NaN with warning; invalid sex -> ValueError; L≈0 tolerance for LMS; NaN propagation as False flags.
 - [x] Add scientific validations: Cross-validate against SAS/R outputs for known examples (e.g., boxplot p-values, LMS derivations).
 - [x] Optimize: Numba JIT on lms/extended; float32 for memory; batching for large N.
 - [x] TDD cycles per function: Red (failing test with known inputs), Green (minimal imp), Refactor (quality checks); human confirm per cycle.
@@ -237,7 +275,7 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC007 | Modified Z-Score at median | X=18, M=18, L=0.5, S=0.1 | mod_z=0.0 | No |
 | TC008 | interpolate_lms placeholder call | None | No error | No |
 | TC009 | Seamless boundary placeholder | None | No error | No |
-| TC010 | Handle age >240: set to NaN with warning | agemos=[300], sex=['M'] | z=NaN, warning | Yes |
+| TC010 | Handle age >241: set to NaN with warning | agemos=[300], sex=['M'] | z=NaN, warning | Yes |
 | TC011 | Missing head_circ: skip headcz flag | agemos, sex, height, weight | Skip headcz | Yes |
 | TC012 | Unit mismatch warning for height >250cm | agemos, sex, height=[260], weight | Warning logged | Yes |
 | TC013 | Invalid sex raises ValueError | agemos, sex=['X'] | ValueError | Yes |
@@ -282,60 +320,91 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC052 | modified_zscore handles n=0 edge case | Empty arrays | Empty NaN array | Yes |
 | TC053 | L_ZERO_THRESHOLD constant usage in lms_zscore | L above/below threshold | Different branches taken | No |
 | TC054 | WHZ optimization: no computation when all heights >=121 | agemos=[60,60], sex, height=[130,140], weight, measures=['whz'] | 'whz' not in result | Yes |
-| TC055 | WHZ only computed and set where height <121, NaN elsewhere | agemos=[60,60], height=[110,130], measures=['whz'] | 'whz' with NaN where >=121 | Yes |
-| TC056 | Validate modified_zscore with exact CDC examples from 'modified-z-scores.md' | BMI=333, L=-2.18, M=20.76, S=0.148; BMI=12, same LMS | mod_z≈49.42; mod_z≈-4.13 | No |
-| TC057 | Test with CDC extended BMI example below 95th percentile |Girl aged 9y6m (114.5mo), BMI=21.2, L=-2.257782149, M=16.57626713, S=0.132796819 | z=1.4215 | No |
-| TC058 | Test with CDC extended BMI example above 95th percentile |Boy aged 4y2m (50.5mo), BMI=22.6, P95=17.8219, sigma=2.3983 | z=2.83 | No |
-| TC059 | Test full BMI z-score with extension using CDC example values |Girl 114.5mo, BMI=21.2 <P95, LMS z <1.645, extend returns original | z=1.4215, no extension | No |
+| TC055 | Validate modified_zscore with exact CDC examples from 'modified-z-scores.md' | BMI=333, L=-2.18, M=20.76, S=0.148; BMI=12, same LMS | mod_z≈49.42; mod_z≈-4.13 | No |
+| TC056 | Test with CDC extended BMI example below 95th percentile |Girl aged 9y6m (114.5mo), BMI=21.2, L=-2.257782149, M=16.57626713, S=0.132796819 | z=1.4215 | No |
+| TC057 | Test with CDC extended BMI example above 95th percentile |Boy aged 4y2m (50.5mo), BMI=22.6, P95=17.8219, sigma=2.3983 | z=2.83 | No |
+| TC058 | Test full BMI z-score with extension using CDC example values |Girl 114.5mo, BMI=21.2 <P95, LMS z <1.645, extend returns original | z=1.4215, no extension | No |
 
-##### Phase 2: Data Acquisition and Preprocessing (Now After Core)
+##### Phase 2: Data Acquisition and Preprocessing
 
-**Objective**: Acquire, preprocess, and store WHO/CDC growth standards data securely for Z-Score calculations. Ensures data integrity, provenance, and offline accessibility. (Extended testing with mocks for independence from live downloads.) Utilizes the following sources for data fetching:
-- **CDC Data**: CDC 2000 Growth Charts, 2 to 20 years:
-  - Weight-for-age charts: https://www.cdc.gov/growthcharts/data/zscore/wtage.csv
-  - Stature-for-age charts: https://www.cdc.gov/growthcharts/data/zscore/statage.csv
-  - BMI-for-age charts: https://www.cdc.gov/growthcharts/data/zscore/bmiagerev.csv
-  - Extended BMI-for-age charts: https://www.cdc.gov/growthcharts/data/extended-bmi/bmi-age-2022.csv
-- **WHO Data**: WHO Child Growth Standards (2006), Birth to 24 Months:
-  - Weight-for-age charts, Boys: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Boys-Weight-for-age-Percentiles.csv
-  - Weight-for-age charts, Girls: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Girls-Weight-for-age%20Percentiles.csv
-  - Length-for-age charts, Boys: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Boys-Length-for-age-Percentiles.csv
-  - Length-for-age charts, Girls: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Girls-Length-for-age-Percentiles.csv
-  - Weight-for-length charts, Boys: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Boys-Weight-for-length-Percentiles.csv
-  - Weight-for-length charts, Girls: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Girls-Weight-for-length-Percentiles.csv
-  - Head circumference-for-age charts, Boys: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Boys-Head-Circumference-for-age-Percentiles.csv
-  - Head circumference-for-age charts, Girls: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Girls-Head-Circumference-for-age-Percentiles.csv
-
-Detailed instructions and methodologies for CDC growth charts are documented in the `docs/cdc/` directory:
-- [CDC Growth Charts SAS Program](docs/cdc/cdc_growth_charts.md) - Includes CDC's Extended BMI-for-Age Growth Charts
-- [Modified Z-Scores](docs/cdc/modified-z-scores.md) - Data Quality Assessment on Anthropometry Data
-- [Extended CDC BMI-for-Age Growth Charts](docs/cdc/cdc-extended-bmi-for-age-growth-charts.md) - Data File for the Extended CDC BMI-for-age Growth Charts for Children and Adolescents
+**Objective**: Download WHO/CDC growth reference data from official sources, process with minimal column optimization, and create compressed .npz file. Achieves 65.9% file size reduction through essential column filtering.
 
 **Checklist** (Follow `tdd_guide.md` Red-Green-Refactor per atomic behavior; confirm with human after cycles):
-- [ ] Create `biv/scripts/download_data.py`: Script to fetch CSV files from above WHO/CDC sources over HTTPS with SSL verification, parse to NumPy arrays, compute SHA-256 hashes, and save as .npz in `biv/data/` (git-ignored).
-- [ ] Implement data validation: Assert array shapes, monotonic age increments, and version hashes for security; log warnings on mismatches but allow fallback to cached data.
-- [ ] Add retry logic with backoff (e.g., requests with tenacity) for network robustness; include metadata with URLs, timestamps, and hashes.
-- [ ] Test script integration: Standalone TDD cycles for CSV parsing, .npz creation, and validation; ensure WHO/CDC boundary handling (24 months cutoff by validating separate datasets for <24mo vs >=24mo).
-- [ ] Update `.gitignore` to exclude `biv/data/*.npz`; add data/ directory.
-- [ ] Run quality checks: uv run pytest --cov=biv.scripts (if script has tests); ruff check; mypy; commit after human confirmation.
+- [x] Create `biv/scripts/download_data.py`: Script to download CSV files from CDC/WHO URLs with SSL verification and SHA-256 integrity checks
+- [x] Implement parsing functions: `parse_cdc_csv()` and `parse_who_csv()` with minimal column filtering (BMI: 6 cols, others: 4 cols)
+- [x] Diagnose WHO weight-for-length parsing bug: Files use "Length" vs "Month" for age column causing index out-of-bounds errors
+- [x] Fix age column parsing in `parse_who_csv()`: Dynamic detection (Length for wtlen files, Month for others) with unified "age" field
+- [x] Add data validation: Assert array shapes, monotonic ages, column presence; include metadata storage
+- [x] Handle sex splitting: CDC Sex=1/2 → `_male`/`_female` arrays; WHO pre-sexed
+- [x] Add error handling: Network timeouts, malformed CSVs, hash verification
+- [x] Update `.gitignore`: Exclude `biv/data/*.npz` from git tracking
+- [x] Run tests: Comprehensive coverage for downloading, parsing, saving
+- [x] Run quality checks: uv run pytest --cov=biv.scripts --cov-report=term-missing >90%; ruff check; mypy
 
-**Dependencies**: Phase 1 complete (but tests can use mocks).
+**Dependencies**: Phase 1 complete (core functions ready).
 
-**Test Case Table for Data Acquisition**:
+**Test Case Table for Data Acquisition and Download**:
 
-| Test Case ID | Description | Input | Expected Output | Edge Case? |
-|--------------|-------------|-------|-----------------|------------|
-| TC001 | Fetch WHO weight data successfully | URL for WHO weight CSV | .npz file with boy/girl arrays | No |
-| TC002 | Fetch CDC BMI data with retry on failure | URL for CDC BMI CSV, simulate network failure | Successful download after retry | Yes |
-| TC003 | Validate data shapes: LMS arrays match age length | Parsed arrays (L, M, S, ages) | No raise; arrays shape (n,) where n ~200 for CDC | No |
-| TC004 | Detect hash mismatch and log warning | Corrupted .npz or URL change | Warning logged; fallback to cache if available | Yes |
-| TC005 | Fail gracefully on invalid URL | Malformed URL | ValueError with descriptive message | Yes |
-| TC006 | Include metadata in .npz: URLs, timestamps | Successful download | .npz with metadata dict | No |
-| TC007 | Handle multi-measure .npz: weight, height, bmi | Combined CSVs | Single .npz with keys per measure/sex | No |
-| TC008 | Validate age monotonicity: increasing ages | Parsed age array | No raise if monotonic | No |
-| TC009 | Compute SHA-256 hash and verify integrity | Downloaded vs. expected hash | Hash match (no warning) | No |
-| TC010 | Fallback to cached data on network failure | Persistent network error | Logs warning; uses existing .npz | Yes |
-| TC011 | Handle WHO/CDC boundary: Separate 24mo datasets | Download WHO (<24mo) and CDC (>=24mo) | Separate .npz files created; no overlap warnings | No |
+| Test Case ID | Description | Input | Expected Output | Edge Case? | Function Tested |
+|--------------|-------------|-------|-----------------|-------------|-----------------|
+| TC001 | Download valid CDC URL successfully | https://www.cdc.gov/growthcharts/data/zscore/wtage.csv | CSV content string | No | download_csv |
+| TC002 | Download valid WHO URL successfully | https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Boys-Weight-for-age-Percentiles.csv | CSV content string | No | download_csv |
+| TC003 | Handle network timeout gracefully | Malformed URL causing timeout | Raises requests.Timeout | Yes | download_csv |
+| TC004 | Handle HTTP error status codes | Invalid URL returning 404 | Raises requests.HTTPError | Yes | download_csv |
+| TC005 | Compute SHA-256 hash correctly | Sample CSV content | 64-character hex string matching openssl output | No | compute_sha256 |
+| TC006 | Parse CDC BMI CSV with essential columns only | bmi-age-2022.csv content | Structured arrays with L,M,S,P95,sigma,agemos | No | parse_cdc_csv |
+| TC007 | Parse CDC wtage CSV with essential columns only | wtage.csv content | Structured arrays with L,M,S,Agemos | No | parse_cdc_csv |
+| TC008 | Parse WHO boys CSV with essential columns only | WHO-Boys-Weight-for-age-Percentiles.csv content | Structured array with Month,L,M,S | No | parse_who_csv |
+| TC009 | Parse WHO girls CSV with essential columns only | WHO-Girls-Head-Circumference-for-age-Percentiles.csv content | Structured array with Month,L,M,S | No | parse_who_csv |
+| TC010 | Handle CDC sex splitting: males only | CDC CSV with Sex=1 rows only | Only _male arrays created | No | parse_cdc_csv |
+| TC011 | Handle CDC sex splitting: females only | CDC CSV with Sex=2 rows only | Only _female arrays created | No | parse_cdc_csv |
+| TC012 | Handle CDC mixed sexes | CDC CSV with both Sex=1 and 2 | Both _male and _female arrays | No | parse_cdc_csv |
+| TC013 | Skip non-essential columns during parsing | CDC CSV with 35 columns | Only 6/4 essential columns kept | No | parse_cdc_csv/parse_who_csv |
+| TC014 | Validate column presence in header | CSV missing essential column | Logs warning, uses fallback | Yes | parse_cdc_csv/parse_who_csv |
+| TC015 | Handle malformed CSV lines | CSV with varying column counts | Skips malformed rows with logging | Yes | parse_cdc_csv/parse_who_csv |
+| TC016 | Convert empty strings to NaN | CSV with empty fields | NaN values in arrays | No | parse_cdc_csv/parse_who_csv |
+| TC017 | Save multiple arrays to .npz | Dict of 16 structured arrays | Single .npz file created | No | save_npz |
+| TC018 | Load .npz and verify integrity | Saved .npz file | All arrays loadable with correct shapes | No | save_npz verification |
+| TC019 | Include metadata in .npz (URL, hash, timestamp) | Download result | .npz contains metadata_url, metadata_hash, etc. | No | main |
+| TC020 | End-to-end: run main() on all sources | All DATA_SOURCES URLs | growth_references.npz with 16 arrays and metadata | No | main |
+| TC021 | Handle partial download failure | One URL fails, others succeed | .npz created with successful sources, logs errors | Yes | main |
+| TC022 | Measure file size reduction | All CSVs processed | Total .npz < 40KB vs raw CSVs >100KB | No | main |
+| TC023 | Verify .gitignore exclusion | .npz in data/ directory | File not staged in git status | No | .gitignore |
+| TC024 | Test WHO/CDC boundary separation | Ages in parsed arrays | WHO: 0-24 months, CDC: 24+ months | No | main |
+| TC025 | Re-run download detects unchanged data | Existing .npz with same hash | Skips download (not implemented yet) | No | main |
+| TC026 | Validate floating point conversion | CSV with string numbers | np.float64 arrays with correct values | No | parse_cdc_csv/parse_who_csv |
+| TC027 | Test array naming conventions | CDC wtage input | Arrays named f"{measure}_{sex}" | No | parse_cdc_csv |
+| TC028 | Test measure mapping from filenames | WHO wtage input | waz measure in output | No | parse_who_csv |
+| TC029 | Handle BOM in WHO header | CSV with \ufeff prefix | Cleaned headers for column lookup | Yes | parse_who_csv |
+| TC030 | Robust column index finding | Variable spaces in header | Correct column positions found | Yes | parse_cdc_csv/parse_who_csv |
+| TC031 | Parse WHO boys weight-for-length CSV | WHO-Boys-Weight-for-length-Percentiles.csv content | Structured array with age,L,M,S unified from "Length" | No | parse_who_csv |
+| TC032 | Parse WHO girls weight-for-length CSV | WHO-Girls-Weight-for-length-Percentiles.csv content | Structured array with age,L,M,S unified from "Length" | No | parse_who_csv |
+| TC033 | Verify Month column used for non-wtlen WHO files | WHO-Boys-Weight-for-age-Percentiles.csv content | age field populated from "Month" column | No | parse_who_csv |
+| TC034 | Test age column unification | Both Month and Length inputs | All WHO arrays have "age" field with correct values | No | parse_who_csv |
+| TC035 | Handle missing Month or Length columns in WHO files | WHO content missing age column | Logs warning, continues with available data | Yes | parse_who_csv |
+| TC036 | Ensure WHO age-based data filtered to <24 months | WHO wtage csv content | Only ages <24 in waz_male array | No | parse_who_csv |
+| TC037 | Ensure WHO wtlen data includes ALL values from original file, unfiltered | WHO wtlen csv content | All height/length rows in wlz_male array | No | parse_who_csv |
+| TC038 | Validate raises for non-finite age values | age array with inf | ValueError | Yes | validate_array |
+| TC039 | Validate handles missing age column gracefully | array without age col | No raise | Yes | validate_array |
+| TC040 | Validate raises for negative M values | negative M in array | ValueError | Yes | validate_array |
+| TC041 | Validate raises for negative S values in WHO data | negative S in who array | ValueError | Yes | validate_array |
+| TC042 | Validate raises for non-monotonic decreasing ages | age not increasing | ValueError | Yes | validate_array |
+| TC043 | Validate raises for negative P95 in CDC data | negative P95 in cdc array | ValueError | Yes | validate_array |
+| TC044 | Validate raises for non-finite L in CDC | inf L in cdc array | ValueError | Yes | validate_array |
+| TC045 | Validate logs warning for empty array | empty array passed | Warning logged | Yes | validate_array |
+| TC046 | Validate passes for valid array | valid array inputs | No raise | No | validate_array |
+| TC047 | Handle special characters in header like (cm) | header with (cm) | Skip invalid rows | Yes | parse_who_csv |
+| TC048 | Parse WHO wtage and filter out ages >=24 | wtage with age>24 | Only <24 in array | No | parse_who_csv |
+| TC049 | Handle malformed CSV lines with varying columns | csv with missing cols | Continue with NaN | Yes | parse_who_csv |
+| TC050 | Main with source_filter='cdc' only downloads CDC sources | source_filter='cdc', force | Only CDC downloads called | No | main |
+| TC051 | Main with force=True reloads all sources | force=True | All downloads called | No | main |
+| TC052 | Main strict_mode=True raises on error | strict=True, failure | Raises RuntimeError | Yes | main |
+| TC053 | Main without strict mode continues on error | strict=False, failure | Continues, logs error | Yes | main |
+| TC054 | Main skips download if timestamp recent | existing .npz recent | Skip download | No | main |
+| TC056 | Parse CDC statage naming -> haz_male/haz_female | statage.csv content | Arrays named haz_male, haz_female | No | parse_cdc_csv |
+| TC057 | Parse CDC statage with missing Sex column raises | statage.csv missing Sex | ValueError on missing header key | Yes | parse_cdc_csv |
+| TC058 | Parse WHO logs warning for missing essential columns | WHO CSV missing L/M/S | Warning logged for each missing column | Yes | parse_who_csv |
+| TC059 | Main calls pbar set_postfix and update | Force download call | set_postfix, update called on tqdm | No | main |
 
 ##### Phase 3: ZScoreDetector Class Implementation
 

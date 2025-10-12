@@ -236,11 +236,11 @@ def _validate_inputs(agemos: np.ndarray, sex: np.ndarray) -> None:
 
 
 def _handle_age_limit(agemos: np.ndarray) -> np.ndarray:
-    """Handle age >240 months: return NaN mask."""
-    age_na_mask = agemos > 240.0
+    """Handle age >241 months: return NaN mask."""
+    age_na_mask = agemos > 241.0
     if np.any(age_na_mask):
         logging.warning(
-            "Age values >240 months detected - setting z-scores to NaN for these entries"
+            "Age values >241 months detected - setting z-scores to NaN for these entries"
         )
     return age_na_mask
 
@@ -262,8 +262,8 @@ def _log_unit_warnings(
             "Weight values >300 kg detected - may be lbs instead of kg (extreme quantiles test)"
         )
     if (
-        np.nanmax(agemos) > 240 and np.nanmean(agemos) > 30
-    ):  # Likely years: mean >30 for age >240
+        np.nanmax(agemos) > 241 and np.nanmean(agemos) > 30
+    ):  # Likely years: mean >30 for age >241
         logging.warning(
             "Age values suggest years instead of months (distribution test)"
         )

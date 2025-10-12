@@ -13,7 +13,10 @@ dependencies = [
     "numpy>=2.3.3",
     "pandas>=2.3.3",
     "pydantic>=2.11.10",
+    "requests>=2.32.5",
     "scipy>=1.16.2",
+    "tqdm>=4.67.0",
+    "urllib3>=2.0.0",
 ]
 
 [build-system]
@@ -42,6 +45,10 @@ mypy_path = "src"
 
 [[tool.mypy.overrides]]
 module = "numba"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "download_data"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

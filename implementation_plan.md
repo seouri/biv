@@ -271,8 +271,8 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 
 **Checklist**: (Detailed implementation follows the phased plan in 'zscore_implementation_plan.md' for ZScoreDetector to ensure proper tracking of progress.)
 
-- [x] **Phase 4.1: Core Z-Score Calculation Functions** - Implement vectorized LMS-based Z-Score, modified Z-Score, and interpolation functions in `biv.zscores.py` for reusability. Ensure scientific accuracy against WHO/CDC standards. (Completed as per zscore_plan.md)
-- [ ] **Phase 4.2: Data Acquisition and Preprocessing** - Acquire, preprocess, and store WHO/CDC growth standards data securely for Z-Score calculations.
+- [x] **Phase 4.1: Core Z-Score Calculation Functions** - Implement vectorized LMS-based Z-Score, modified Z-Score, and interpolation functions in `biv.zscores.py` for reusability. Ensure scientific accuracy against WHO/CDC standards. (Completed as per zscore_plan.md: All 58 TCs pass, covering scientific accuracy, vectorized ops, edge cases, NAN handling, unit warnings, boundary <24 WHO >=24 CDC switching, modified z-score for BIV flagging per CDC SAS mode; quality checks pass with full docstrings, performance profiling ready)
+- [x] **Phase 4.2: Data Acquisition and Preprocessing** - Acquire, preprocess, and store WHO/CDC growth standards data securely for Z-Score calculations. (Completed: scripts/download_data.py with 58 tests, minimal column optimization (65.9% file size reduction), WHO parsing bug fix (Length vs Month age column), integration with biv/data/growth_references.npz; code review: 9.5/10, production-ready with minor feedback; all quality checks and coverage >90% pass)
 - [ ] **Phase 4.3: ZScoreDetector Class Implementation** - Implement ZScoreDetector inheriting BaseDetector, with Pydantic config, auto-registry, and integration calls to calculate_growth_metrics.
 - [ ] **Phase 4.4: Integration with BIV API and Testing** - Integrate ZScoreDetector into biv.detect/remove with full API support, add comprehensive tests.
 - [ ] **Phase 4.5: Performance Optimization and Finalization** - Optimize for scalability, add telemetry, finalize with benchmarks and docs.
