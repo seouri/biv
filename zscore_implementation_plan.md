@@ -13,30 +13,54 @@ Follow `biv`'s git branching (e.g., phase-4-zscore), human confirmations, and pl
 The following testing guidelines and comprehensive test cases are incorporated from `zscores_testing.md`, providing a complete validation framework with 32 core scenarios across WHO (<24 months) and CDC (≥24 months) growth charts. This ensures thorough validation against SAS/R outputs and functional requirements.
 
 #### 1. Data Acquisition and Preprocessing
-**RECOMMENDATION: Integrate reference data directly into `src/biv/data/` package directory** following scientific Python best practices (analysis shows this provides better usability than external data files).
+**ARCHITECTURE DECISION: Integrate reference data directly into `src/biv/data/` package directory** following scientific Python best practices. This decision provides optimal usability vs external script-run data files.
 
-- **Architecture**: Store processed `growth_references.npz` (37KB compressed) in `src/biv/data/` as version-controlled package asset
-- **Build Process**: `scripts/download_data.py` creates the .npz file, then copy to `src/biv/data/` during release
-- **Loading**: Use `importlib.resources` for lazy loading via cached function at runtime
+**Advantages of Package Integration:**
+- **Zero-config setup**: Users don't need to run scripts; data available immediately after `pip install`
+- **Offline operation**: Works without internet connection for downloads
+- **Version control**: Data is versioned with package releases, ensuring reproducibility
+- **Simplicity**: Single installation step vs multiple download/initialization steps
+- **Scientific precedents**: NumPy/SciPy embed reference data extensively - NumPy ships with mathematical constants and special functions lookup tables, SciPy includes reference polynomials and statistical constants, scikit-image embeds calibration data, astropy bundles astronomical reference tables. All follow the "reference data as package assets" pattern for reliability and reproducibility.
+- **Guaranteed availability**: No network failures can break functionality
+- **Build-time optimization**: Data compiled efficiently (37KB vs 103KB raw)
 
-  ```python
-  from importlib import resources
-  import functools
-  import numpy as np
+**Disadvantages Mitigated:**
+- **Package size increase**: 37KB compressed is negligible (NumPy is 25MB, SciPy 80MB; 37KB is ~0.01% of typical scientific packages)
+- **Update frequency**: Growth charts updated ~5-10 years; package releases can trigger data updates
+- **Version control bloat**: Scientific reference data is static by design, not changing frequently like code
+- **Release process complexity**: Automated via CI; `download_data.py` builds data, CI copies to `src/biv/data/` during release build
 
-  @functools.cache  # Lazy loading with caching
-  def _load_reference_data() -> Dict[str, np.ndarray]:
-      """Load growth reference data from package resources."""
-      with resources.files('biv.data').joinpath('growth_references.npz').open('rb') as f:
-          return np.load(f)
+**Vs Current Scripts-Generated Approach:**
+- **Scripts approach cons**: Setup friction, potential stale data, users forget/miss script runs, data not reproducible across environments
+- **Scripts approach requires**: Manual intervention, documentation complexity, troubleshooting download failures, additional error modes
+- **Package approach wins**: Better user experience, fewer support issues, matches scientific package patterns (astropy, skimage embed calibration data)
 
-  # Usage in calculate_growth_metrics:
-  def calculate_growth_metrics(...):
-      ref_data = _load_reference_data()
-      # interpolate LMS values...
-  ```
+**Implementation:**
+- **Location**: `src/biv/data/growth_references.npz` (version-controlled in repository)
+- **Build Process**:
+  1. `scripts/download_data.py` fetches/parses official CSV → optimized .npz (37KB)
+  2. CI/development: Copy built .npz to `src/biv/data/` for package inclusion
+  3. Repository excludes `data/growth_references.npz` but includes built version in `src/biv/data/`
+- **Loading**: `@functools.cache` lazy loading with `importlib.resources` (loads once per session)
 
-- **Benefits**: No download step required, works offline, guaranteed data availability, follows NumPy/SciPy patterns
+```python
+from importlib import resources
+import functools
+import numpy as np
+
+@functools.cache  # Lazy loading with caching
+def _load_reference_data() -> Dict[str, np.ndarray]:
+    """Load growth reference data from package resources."""
+    with resources.files('biv.data').joinpath('growth_references.npz').open('rb') as f:
+        return np.load(f)
+
+# Usage in calculate_growth_metrics:
+def calculate_growth_metrics(...):
+    ref_data = _load_reference_data()
+    # interpolate LMS values...
+```
+
+- **Benefits Achieved**: Offline-ready, reproducible, zero-setup, follows NumPy/SciPy patterns, minimal size addition (37KB compressed)
 
 **Data Sources**:
 - **CDC Data**: CDC 2000 Growth Charts covering **24.0 months and above**, from https://www.cdc.gov/growthcharts/cdc-data-files.htm; parse to .npz with keys like 'bmi_male_L' (NumPy arrays).
