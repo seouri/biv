@@ -18,7 +18,7 @@ repos:
     hooks:
       - id: mypy
         name: mypy
-        entry: uv run mypy --no-error-summary
+        entry: uv run mypy --no-error-summary src tests
         language: system
         files: \.py$
         types: [python]
