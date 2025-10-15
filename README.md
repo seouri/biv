@@ -184,9 +184,10 @@ Identifies BIVs and returns a DataFrame with added boolean flag columns.
         Data is cached locally in the `data/` subdirectory as .npz files.
 
         **References**:
-        - [CDC Growth Charts SAS Program](docs/cdc/cdc_growth_charts.md) - Includes CDC's Extended BMI-for-Age Growth Charts
+        - [CDC Growth Charts SAS Program](docs/cdc/sas-program-for-cdc-growth-charts.md) - Includes CDC's Extended BMI-for-Age Growth Charts
+        - [WHO Growth Charts SAS Program](docs/cdc/sas-program-for-who-growth-charts.md)
         - [Modified Z-Scores](docs/cdc/modified-z-scores.md) - Data Quality Assessment on Anthropometry Data
-        - [Extended CDC BMI-for-Age Growth Charts](docs/cdc/cdc-extended-bmi-for-age-growth-charts.md) - Data File for the Extended CDC BMI-for-age Growth Charts for Children and Adolescents
+        - [Extended CDC BMI-for-Age Growth Charts](docs/cdc/data-file-cdc-extended-bmi-for-age-growth-charts.md) - Data File for the Extended CDC BMI-for-age Growth Charts for Children and Adolescents
 
         Optional columns: 'head_circ_cm' for head circumference measurements.
             
