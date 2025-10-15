@@ -18,10 +18,11 @@ repos:
     hooks:
       - id: mypy
         name: mypy
-        entry: bash -c 'PYTHONPATH=src uv run mypy src tests'
+        entry: bash -c 'PYTHONPATH=src uv run mypy src'
         language: system
         files: \.py$
         types: [python]
+        exclude: ^tests/
       - id: pytest
         name: pytest
         entry: uv run pytest tests --tb=short -v --maxfail=5

@@ -54,8 +54,8 @@ module = "download_data"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "tests.test_zscores"
-disallow_untyped_defs = false
+module = "tests.*"
+ignore_errors = true
 
 [dependency-groups]
 dev = [

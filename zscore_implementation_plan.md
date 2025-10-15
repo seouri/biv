@@ -267,7 +267,7 @@ This refined plan now addresses all assessment gaps, positioning ZScoreDetector 
 - **After**: 37,743 bytes (37 KB) - only essential columns
 - **Savings**: 67,662 bytes (**65.9% reduction**)
 
-**Data Download Script Tests**: Added comprehensive test suite with 84 test cases covering end-to-end download, parsing, validation, and error handling scenarios. Achieves >90% test coverage for scripts/download_data.py.
+**Data Download Script Tests**: Added comprehensive test suite with 100 test cases covering end-to-end download, parsing, validation, and error handling scenarios. Achieves >90% test coverage for scripts/download_data.py.
 
 **Performance Impact**:
 - Faster parsing: Minimal data extraction
@@ -403,7 +403,7 @@ This phased plan ensures incremental, testable development per TDD, with full in
 
 **Dependencies**: Phase 1 complete (core functions ready).
 
-**Test Case Table for Data Acquisition and Download** (Updated to reflect all tests in tests/scripts/test_download_data.py):
+**Test Case Table for Data Acquisition and Download** (Updated to reflect all 100 tests in tests/scripts/test_download_data.py):
 
 | Test Case ID | Description | Input | Expected Output | Edge Case? | Function Tested |
 |--------------|-------------|-------|-----------------|-------------|-----------------|
@@ -430,7 +430,7 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC021 | Handle partial download failure | One URL fails, others succeed | .npz created with successful sources, logs errors | Yes | main |
 | TC022 | Measure file size reduction | All CSVs processed | Total .npz < 40KB vs raw CSVs >100KB | No | main |
 | TC023 | Verify .gitignore exclusion | .npz in data/ directory | File not staged in git status | No | .gitignore |
-| TC024 | Test WHO/CDC boundary separation | Ages in parsed arrays | WHO: 0-24 months, CDC: 24+ months | No | main |
+| TC024 | Validate WHO/CDC boundary separation | Ages in parsed arrays | WHO: 0-24 months, CDC: 24+ months | No | main |
 | TC025 | Re-run download detects unchanged data | Existing .npz with same hash | Skips download (not implemented yet) | No | main |
 | TC026 | Validate floating point conversion | CSV with string numbers | np.float64 arrays with correct values | No | parse_cdc_csv/parse_who_csv |
 | TC027 | Test array naming conventions | CDC wtage input | Arrays named f"{measure}_{sex}" | No | parse_cdc_csv |
@@ -440,7 +440,7 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC031 | Parse WHO boys weight-for-length CSV (Length column) | WHO-Boys-Weight-for-length-Percentiles.csv content | Structured array with age,L,M,S unified from "Length" | No | parse_who_csv |
 | TC032 | Parse WHO girls weight-for-length CSV (Length column) | WHO-Girls-Weight-for-length-Percentiles.csv content | Structured array with age,L,M,S unified from "Length" | No | parse_who_csv |
 | TC033 | Verify Month column used for non-wtlen WHO files | WHO-Boys-Weight-for-age-Percentiles.csv content | age field populated from "Month" column | No | parse_who_csv |
-| TC034 | Test age column unification for wtlen | WHO wtlen csv | age field populated from "Length" column | No | parse_who_csv |
+| TC034 | Test age column unification | WHO wtlen csv | age field populated from "Length" column | No | parse_who_csv |
 | TC035 | Handle missing Month or Length columns in WHO files | WHO content missing age column | Logs warning, continues with available data | Yes | parse_who_csv |
 | TC036 | Ensure WHO age-based data filtered to <24 months | WHO wtage csv content | Only ages <24 in waz_male array | No | parse_who_csv |
 | TC037 | Ensure WHO wtlen data includes ALL values from original file, unfiltered | WHO wtlen csv content | All height/length rows in wlz_male array | No | parse_who_csv |
@@ -465,10 +465,11 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC056 | Parse CDC statage with missing Sex column raises | statage.csv missing Sex | ValueError on missing header key | Yes | parse_cdc_csv |
 | TC057 | Parse WHO logs warning for missing essential columns | WHO CSV missing L/M/S | Warning logged for each missing column | Yes | parse_who_csv |
 | TC058 | Main calls pbar set_postfix and update | Force download call | set_postfix, update called on tqdm | No | main |
+| TC059 | Parse CDC returns dict with keys | CDC BMI csv | Dict with bmi_male, bmi_female | No | parse_cdc_csv |
 | TC060 | Download retry on transient errors | HTTP connection issues | Retry logic applied | Yes | download_csv |
 | TC061 | Download fails after max retries exceeded | Persistent connection failure | Exception raised | Yes | download_csv |
 | TC062 | Download with custom timeout | timeout=60 | Uses 60s timeout | No | download_csv |
-| TC063 | Skip download when hash matches | existing .npz with matching hash | Download skipped | No | main |
+| TC063 | Skip download when hash matches | existing .npz with matching stored hash | Download skipped | No | main |
 | TC064 | Force download ignores hash | force=True with matching hash | Download forced | No | main |
 | TC065 | Parse WHO with extra spaces in header (not supported) | header with trailing spaces | Empty result due to column mismatches | Yes | parse_who_csv |
 | TC066 | Parse CDC with tab separators (not supported) | tab-delimited CSV | ValueError on Sex column not found | Yes | parse_cdc_csv |
@@ -492,7 +493,7 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC084 | Validate monotonic decreasing ages | non-increasing ages | ValueError | Yes | validate_array |
 ||||Integration Tests for Package Data Loading||||
 | TC085 | Load growth references .npz from package data | importlib.resources access | Arrays loaded lazily on first use | No | get_reference_data |
-| TC086 | Cache reference data function result | @functools.cache decorator behavior | Same arrays returned on multiple calls | No | get_reference_data |
+| TC086 | Cache behavior for reference data function | @functools.cache decorator behavior | Same arrays returned on multiple calls | No | get_reference_data |
 | TC087 | Verify all expected reference arrays present | .npz file contents | 16 arrays: waz_male, waz_female, haz_male, etc. | No | load_reference_arrays |
 | TC088 | Validate array shapes in loaded data | Structure validation | Each array has expected shape and dtype | No | validate_loaded_data |
 | TC089 | Handle missing data file gracefully | Damaged .npz file | Clear error message with fallback guidance | Yes | get_reference_data |
@@ -502,10 +503,10 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC093 | Data version compatibility check | Array format validation | Compatible with expected NumPy dtypes and shapes | No | compatibility_check |
 | TC094 | Fallback to bundled data on network failure | Network unavailable scenario | Pre-downloaded data loads successfully | Yes | offline_fallback |
 | TC095 | Detect data file corruption through hash check | Modified .npz file | Warning/error when hash doesn't match metadata | Yes | integrity_verification |
-| TC096 | Handle empty data arrays gracefully | Sparse reference data | Maintains shape consistency, proper NaN handling | Yes | handle_sparse_data |
+| TC096 | Handle sparse reference data gracefully | Sparse reference data | Maintains shape consistency, proper NaN handling | Yes | handle_sparse_data |
 | TC097 | Performance profiling of data loading | Loading time measurement | First load <100ms, subsequent <1ms via cache | No | performance_benchmarks |
 | TC098 | Integration with calculate_growth_metrics | End-to-end calculation | Z-scores computed using loaded reference data | No | calculate_growth_metrics |
-| TC099 | Version compatibility across package releases | Data format evolution | Backward compatibility or migration path | Yes | version_compatibility |
+| TC099 | Backward compatibility across package versions | Data format evolution | Backward compatibility or migration path | Yes | version_compatibility |
 | TC100 | Package resource access in different environments | Virtualenv, conda, system installs | Reliable data loading across environments | No | cross_environment |
 
 ##### Phase 3: ZScoreDetector Class Implementation

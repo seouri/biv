@@ -390,59 +390,40 @@ def main(strict_mode=False, source_filter=None, force=False):
                 pbar.set_postfix({"source": f"{source_type.upper()}: {name}"})
                 pbar.update(1)
 
-                skip_download = False
-                ts_key = f"metadata_{name}_timestamp"
-                if not force and output_path.exists():
-                    temp_loaded = np.load(output_path)
-                    if ts_key in temp_loaded:
-                        stored_ts = np.datetime64(temp_loaded[ts_key][0])
-                        if (np.datetime64("now") - stored_ts) < np.timedelta64(30, "D"):
-                            logger.info(
-                                f"Skipping download for {name} as recently updated"
-                            )
-                            skip_download = True
-                    if temp_loaded:
-                        temp_loaded.close()
+                # Always download since these files are not that big
+                try:
+                    # Download CSV
+                    csv_content = download_csv(url)
+                    hash_value = compute_sha256(csv_content)
 
-                if not skip_download:
-                    try:
-                        # Download CSV
-                        csv_content = download_csv(url)
-                        hash_value = compute_sha256(csv_content)
+                    # Parse based on source type
+                    if source_type == "cdc":
+                        parsed = parse_cdc_csv(csv_content, name)
+                    else:  # who
+                        parsed = parse_who_csv(csv_content, name)
 
-                        # Parse based on source type
-                        if source_type == "cdc":
-                            parsed = parse_cdc_csv(csv_content, name)
-                        else:  # who
-                            parsed = parse_who_csv(csv_content, name)
+                    all_data.update(parsed)
 
-                        all_data.update(parsed)
+                    # Store metadata per source
+                    metadata = {
+                        "url": url,
+                        "hash": hash_value,
+                        "timestamp": str(np.datetime64("now")),
+                    }
 
-                        # Store metadata per source
-                        metadata = {
-                            "url": url,
-                            "hash": hash_value,
-                            "timestamp": str(np.datetime64("now")),
-                        }
+                    # Add metadata as arrays
+                    for key, value in metadata.items():
+                        all_data[f"metadata_{name}_{key}"] = np.array(
+                            [value], dtype="U256"
+                        )
 
-                        # Add metadata as arrays
-                        for key, value in metadata.items():
-                            all_data[f"metadata_{name}_{key}"] = np.array(
-                                [value], dtype="U256"
-                            )
-
-                    except Exception as e:
-                        failed_sources.append(f"{source_type}::{name}")
-                        logger.error(f"Failed to process {source_type}::{name}: {e}")
-                        if strict_mode:
-                            # Raise at end with all failed sources
-                            pass
-                        continue
-                else:
-                    # Update timestamp even on skip to refresh
-                    all_data[f"metadata_{name}_timestamp"] = np.array(
-                        [str(np.datetime64("now"))], dtype="U256"
-                    )
+                except Exception as e:
+                    failed_sources.append(f"{source_type}::{name}")
+                    logger.error(f"Failed to process {source_type}::{name}: {e}")
+                    if strict_mode:
+                        # Raise at end with all failed sources
+                        pass
+                    continue
 
     pbar.close()
 
