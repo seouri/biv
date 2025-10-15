@@ -15,6 +15,10 @@ data _mydata _windata _wold; set mydata;
 	if _agedays ge 731 then output _wold; 
 		else output _windata; *only do calcs for kids who are 0 to 2 y of age;
 
+***********************************************************************;
+*** BEGIN MODIFICATION: READ WHOref_d.csv INSTEAD OF WHOref_d.sas7bdat
+***********************************************************************;
+
 *** 1. IMPORT THE CSV FILE ***;
 PROC IMPORT DATAFILE="&dirpath/WHOref_d.csv"
     OUT=refdir.whoref_d_csv
