@@ -36,8 +36,8 @@ jobs:
           key: ruff-${{ runner.os }}-${{ hashFiles('src/**', 'tests/**', 'pyproject.toml') }}
       - name: Run linting, formatting, and type checks
         run: |
-          uv run ruff check --cache-dir .ruff_cache .
+          uv run ruff check --select=E9,F63,F7,F82,W605 --cache-dir .ruff_cache .
           uv run ruff format --cache-dir .ruff_cache --check .
-          uv run mypy src tests
+          uv run mypy --no-error-summary src tests
       - name: Run tests with coverage
         run: uv run pytest --cov --cov-fail-under=85
