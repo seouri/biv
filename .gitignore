@@ -177,6 +177,3 @@ pyrightconfig.json
 .DS_Store
 
 # End of https://www.toptal.com/developers/gitignore/api/python
-
-# BIV data files (downloaded/processed references)
-data/*.npz

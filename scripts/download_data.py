@@ -357,10 +357,10 @@ def save_npz(data: Dict[str, np.ndarray], output_path: Path) -> None:
 def main(strict_mode=False, source_filter=None, force=False):
     """Main function to download and process all data."""
     script_dir = Path(__file__).parent
-    data_dir = script_dir.parent / "data"
+    data_dir = script_dir.parent / "src" / "biv" / "data"
 
-    # Create data directory if it doesn't exist
-    data_dir.mkdir(exist_ok=True)
+    # Create data directory if it doesn't exist (parents=True for robustness)
+    data_dir.mkdir(parents=True, exist_ok=True)
 
     output_path = data_dir / "growth_references.npz"
 

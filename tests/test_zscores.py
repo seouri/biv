@@ -1266,9 +1266,21 @@ def test_tc084_get_reference_data_path():
 
 def test_tc085_load_reference_data_mock():
     """Test _load_reference_data with mock data handling"""
-    # This will test the error handling path since data file likely doesn't exist
-    with pytest.raises((FileNotFoundError, ValueError)):
-        _load_reference_data()
+    # Mock data file to test loading behavior without actual file
+    from unittest.mock import patch
+
+    mock_data = {
+        "waz_male": np.array(
+            [(60.0, 0.1, 18.0, 0.1)],
+            dtype=[("age", "f8"), ("L", "f8"), ("M", "f8"), ("S", "f8")],
+        )
+    }
+    with patch("numpy.load") as mock_load:
+        mock_load.return_value = mock_data
+        data = _load_reference_data()
+        assert isinstance(data, dict)
+        assert "waz_male" in data  # Basic check
+        assert data["waz_male"].shape == (1,)  # Check loaded shape
 
 
 def test_tc086_validate_loaded_data_integrity_valid():
