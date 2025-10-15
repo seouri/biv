@@ -23,7 +23,7 @@ from biv.zscores import (
 )
 
 
-def test_tc001_lms_zscore_normal_case() -> None:
+def test_tc001_lms_zscore_normal_case():
     """LMS Z-Score for normal case (L≠0)"""
     X = np.array(17.9)
     L = np.array(0.5)
@@ -34,7 +34,7 @@ def test_tc001_lms_zscore_normal_case() -> None:
     assert np.isclose(z, -0.0556, atol=1e-4)
 
 
-def test_tc002_lms_zscore_log_fallback() -> None:
+def test_tc002_lms_zscore_log_fallback():
     """LMS Z-Score for L≈0 (log fallback)"""
     X = np.array(18.0)
     L = np.array(0.0001)
@@ -44,7 +44,7 @@ def test_tc002_lms_zscore_log_fallback() -> None:
     assert np.isclose(z, 0.0, atol=1e-6)
 
 
-def test_tc003_extended_bmiz_no_extension() -> None:
+def test_tc003_extended_bmiz_no_extension():
     """Extended BMIz for z < 1.645"""
     bmi = np.array(20.0)
     p95 = np.array(25.0)
@@ -54,7 +54,7 @@ def test_tc003_extended_bmiz_no_extension() -> None:
     assert np.isclose(z, 1.0, atol=1e-6)
 
 
-def test_tc004_extended_bmiz_cap() -> None:
+def test_tc004_extended_bmiz_cap():
     """Extended BMIz cap at 8.21 for extreme"""
     # Note: This is approximate based on the formula, real values may vary
     bmi = np.array(100.0)
@@ -65,7 +65,7 @@ def test_tc004_extended_bmiz_cap() -> None:
     assert z <= 8.21
 
 
-def test_tc005_modified_zscore_above_median() -> None:
+def test_tc005_modified_zscore_above_median():
     """Modified Z-Score above median"""
     X = np.array(20.0)
     M = np.array(18.0)
@@ -76,7 +76,7 @@ def test_tc005_modified_zscore_above_median() -> None:
     assert mod_z > 0
 
 
-def test_tc006_modified_zscore_below_median() -> None:
+def test_tc006_modified_zscore_below_median():
     """Modified Z-Score below median"""
     X = np.array(16.0)
     M = np.array(18.0)
@@ -87,7 +87,7 @@ def test_tc006_modified_zscore_below_median() -> None:
     assert mod_z < 0
 
 
-def test_tc007_modified_zscore_at_median() -> None:
+def test_tc007_modified_zscore_at_median():
     """Modified Z-Score at median"""
     X = np.array(18.0)
     M = np.array(18.0)
@@ -99,49 +99,49 @@ def test_tc007_modified_zscore_at_median() -> None:
 
 
 # Interp and calculate_growth_metrics need mock data, so placeholder for now
-def test_tc008_interpolate_lms_placeholder() -> None:
+def test_tc008_interpolate_lms_placeholder():
     """Vectorized interpolation for BMI at age 120mo boy (placeholder)"""
     # Will implement with actual data in later phases
     pass
 
 
-def test_tc009_seamless_boundary_placeholder() -> None:
+def test_tc009_seamless_boundary_placeholder():
     """Seamless WHO/CDC boundary at 24mo (placeholder)"""
     # Will implement with actual data
     pass
 
 
-def test_tc010_age_gt_241() -> None:
+def test_tc010_age_gt_241():
     """Handle age >240: set to NaN with warning"""
     # TODO: Test in calculate_growth_metrics
     pass
 
 
-def test_tc011_missing_head_circ() -> None:
+def test_tc011_missing_head_circ():
     """Missing head_circ: skip headcz flag"""
     # TODO: Test in calculate_growth_metrics
     pass
 
 
-def test_tc012_unit_warning() -> None:
+def test_tc012_unit_warning():
     """Unit mismatch warning for height >250cm"""
     # TODO: Test in calculate_growth_metrics
     pass
 
 
-def test_tc013_invalid_sex() -> None:
+def test_tc013_invalid_sex():
     """Invalid sex raises ValueError"""
     # TODO: Test in calculate_growth_metrics
     pass
 
 
-def test_tc014_cross_validate_sas() -> None:
+def test_tc014_cross_validate_sas():
     """Cross-validate against SAS macro for boy 60mo BMI"""
     # TODO: With known values
     pass
 
 
-def test_tc015_biv_flags_waz() -> None:
+def test_tc015_biv_flags_waz():
     """BIV flags for WAZ: z < -5 or z > 8"""
     # Create data with extreme WAZ values using mock data
     agemos = np.array([60.0, 60.0, 60.0])
@@ -165,7 +165,7 @@ def test_tc015_biv_flags_waz() -> None:
     assert result["_bivwaz"][2] == True  # weight=500.0 gives extreme high mod_waz
 
 
-def test_tc016_biv_flags_haz() -> None:
+def test_tc016_biv_flags_haz():
     """BIV flags for HAZ: z < -5 or z > 4"""
     # Create data with extreme HAZ values using mock data
     agemos = np.array([60.0, 60.0, 60.0])
@@ -188,7 +188,7 @@ def test_tc016_biv_flags_haz() -> None:
     assert result["_bivhaz"][2] == True  # height=200.0 gives extreme high HAZ
 
 
-def test_tc017_biv_flags_whz() -> None:
+def test_tc017_biv_flags_whz():
     """BIV flags for WHZ: z < -4 or z > 8"""
     # Create data with WHZ values (height <121 needed)
     agemos = np.array([60.0, 60.0, 60.0])
@@ -209,7 +209,7 @@ def test_tc017_biv_flags_whz() -> None:
     assert "_bivwh" not in result
 
 
-def test_tc018_biv_flags_bmiz() -> None:
+def test_tc018_biv_flags_bmiz():
     """BIV flags for BMIz: z < -4 or z > 8"""
     # Create data with extreme BMI values but adjust expectations
     # The mock data currently produces extreme values for all cases, so all get flagged
@@ -235,7 +235,7 @@ def test_tc018_biv_flags_bmiz() -> None:
     assert result["_bivbmi"][2] == True  # weight=100.0 gives extreme BMIz
 
 
-def test_tc019_biv_flags_headcz() -> None:
+def test_tc019_biv_flags_headcz():
     """BIV flags for HEADCZ: z < -5 or z > 5"""
     # Create data with extreme head circumference values
     # The BIV flags are computed only when mod_headcz is computed, and that requires specific measures
@@ -262,9 +262,9 @@ def test_tc019_biv_flags_headcz() -> None:
     M=st.lists(st.floats(min_value=0.1, max_value=200), min_size=1, max_size=10),
     S=st.lists(st.floats(min_value=0.01, max_value=1.0), min_size=1, max_size=10),
 )
-def test_tc020_hypothesis_precision(  # type: ignore[no-untyped-def]
+def test_tc020_hypothesis_precision(
     X: list[float], L: list[float], M: list[float], S: list[float]
-) -> None:
+):
     """Hypothesis-based microprecision check: z-score stability within valid ranges (1e-6 tol against LMS formula)"""
     # Convert to numpy arrays and ensure same length
     n = min(len(X), len(L), len(M), len(S))
@@ -312,13 +312,13 @@ def test_tc020_hypothesis_precision(  # type: ignore[no-untyped-def]
         assert np.all(np.abs(z_at_median) < 0.5)  # Should be reasonably close to 0
 
 
-def test_tc021_batching_large_n() -> None:  # type: ignore[no-untyped-def]
+def test_tc021_batching_large_n():  # type: ignore[no-untyped-def]
     """Batching for large N: Processes 10M rows in batches"""
     # TODO: Test performance
     pass
 
 
-def test_tc022_modified_zscore_log_case() -> None:
+def test_tc022_modified_zscore_log_case():
     """Modified Z-Score with L≈0 (log scale)"""
     X = np.array(18.0)
     M = np.array(18.0)
@@ -329,7 +329,7 @@ def test_tc022_modified_zscore_log_case() -> None:
     assert np.isclose(mod_z, 0.0, atol=1e-4)
 
 
-def test_tc023_extended_bmiz_extreme_cap() -> None:
+def test_tc023_extended_bmiz_extreme_cap():
     """Extended BMIz extreme cap exact 8.21"""
     bmi = np.array(200.0)
     p95 = np.array(20.0)
@@ -339,7 +339,7 @@ def test_tc023_extended_bmiz_extreme_cap() -> None:
     assert z == 8.21  # should be capped
 
 
-def test_tc024_lms_zscore_invalid() -> None:
+def test_tc024_lms_zscore_invalid():
     """LMS zscore with invalid S<=0"""
     X = np.array(17.9)
     L = np.array(0.5)
@@ -349,7 +349,7 @@ def test_tc024_lms_zscore_invalid() -> None:
     assert np.isnan(z)
 
 
-def test_tc025_interpolate_lms_call() -> None:
+def test_tc025_interpolate_lms_call():
     """interpolate_lms placeholder call"""
     # Updated to call with required arguments
     import numpy as np
@@ -369,7 +369,7 @@ def test_tc025_interpolate_lms_call() -> None:
         pass
 
 
-def test_tc026_calculate_growth_metrics_basic() -> None:
+def test_tc026_calculate_growth_metrics_basic():
     """calculate_growth_metrics basic functionality"""
     # Simple test with mock data
     agemos = np.array([60.0])
@@ -387,13 +387,13 @@ def test_tc026_calculate_growth_metrics_basic() -> None:
     assert len(result["_bivbmi"]) == 1
 
 
-def test_tc027_calculate_growth_metrics_invalid_sex() -> None:
+def test_tc027_calculate_growth_metrics_invalid_sex():
     """calculate_growth_metrics raises ValueError for invalid sex"""
     with pytest.raises(ValueError, match="Sex values must be 'M' or 'F'"):
         calculate_growth_metrics(np.array([60.0]), np.array(["X"]))
 
 
-def test_tc028_calculate_growth_metrics_age_gt_241(caplog) -> None:
+def test_tc028_calculate_growth_metrics_age_gt_241(caplog):
     """calculate_growth_metrics sets NaN for age >241 with warning"""
     import logging
 
@@ -411,7 +411,7 @@ def test_tc028_calculate_growth_metrics_age_gt_241(caplog) -> None:
         assert np.isnan(result["haz"][0])
 
 
-def test_tc029_calculate_growth_metrics_subset_measures() -> None:
+def test_tc029_calculate_growth_metrics_subset_measures():
     """calculate_growth_metrics computes subset of measures"""
     result = calculate_growth_metrics(
         np.array([60.0]),
@@ -425,7 +425,7 @@ def test_tc029_calculate_growth_metrics_subset_measures() -> None:
     assert "haz" in result
 
 
-def test_tc030_cross_validate_sas_example_stub() -> None:
+def test_tc030_cross_validate_sas_example_stub():
     """Cross-validate against SAS macro example (stub with known formula)"""
     # Using simplified example: z=0 at median
     agemos = np.array([60.0])
@@ -441,7 +441,7 @@ def test_tc030_cross_validate_sas_example_stub() -> None:
 
 
 # Additional BIV flag tests
-def test_tc031_biv_flags() -> None:
+def test_tc031_biv_flags():
     """BIV flags from mod z"""
     # Create data that will give extreme z-scores with mock data
     agemos = np.array([60.0, 60.0, 60.0])
@@ -457,7 +457,7 @@ def test_tc031_biv_flags() -> None:
         # Depending on calculation, some may be True
 
 
-def test_tc032_lms_zscore_2d_array() -> None:
+def test_tc032_lms_zscore_2d_array():
     """LMS Z-Score for 2D arrays"""
     X = np.array([[15.0, 18.0], [20.0, 17.0]])
     L = np.array([[0.1, 0.2], [0.3, 0.4]])
@@ -468,7 +468,7 @@ def test_tc032_lms_zscore_2d_array() -> None:
     assert np.all((np.isfinite(z) | np.isnan(z)))
 
 
-def test_tc033_modified_zscore_2d_array() -> None:
+def test_tc033_modified_zscore_2d_array():
     """Modified Z-Score for 2D arrays"""
     X = np.array([[15.0, 18.0], [20.0, 17.0]])
     M = np.array([[16.0, 18.0], [19.0, 18.0]])
@@ -479,7 +479,7 @@ def test_tc033_modified_zscore_2d_array() -> None:
     assert np.all((np.isfinite(mod_z) | np.isnan(mod_z)))
 
 
-def test_tc034_calculate_growth_metrics_height_warning(caplog) -> None:
+def test_tc034_calculate_growth_metrics_height_warning(caplog):
     """calculate_growth_metrics logs warning for height >200 (95th percentile)"""
     import logging
 
@@ -493,7 +493,7 @@ def test_tc034_calculate_growth_metrics_height_warning(caplog) -> None:
     assert any("may be inches" in str(record.message) for record in caplog.records)
 
 
-def test_tc035_calculate_growth_metrics_weight_warning(caplog) -> None:
+def test_tc035_calculate_growth_metrics_weight_warning(caplog):
     """calculate_growth_metrics logs warning for weight >300"""
     import logging
 
@@ -507,7 +507,7 @@ def test_tc035_calculate_growth_metrics_weight_warning(caplog) -> None:
     assert any("may be lbs" in str(record.message) for record in caplog.records)
 
 
-def test_tc036_calculate_growth_metrics_age_years_warning(caplog) -> None:
+def test_tc036_calculate_growth_metrics_age_years_warning(caplog):
     """calculate_growth_metrics logs warning for age suggest years"""
     import logging
 
@@ -520,7 +520,7 @@ def test_tc036_calculate_growth_metrics_age_years_warning(caplog) -> None:
     assert any("suggest years" in str(record.message) for record in caplog.records)
 
 
-def test_tc037_calculate_growth_metrics_whz() -> None:
+def test_tc037_calculate_growth_metrics_whz():
     """calculate_growth_metrics computes whz when height <121 and requested"""
     result = calculate_growth_metrics(
         np.array([60.0]),
@@ -533,7 +533,7 @@ def test_tc037_calculate_growth_metrics_whz() -> None:
     assert "mod_whz" in result
 
 
-def test_tc038_calculate_growth_metrics_whz_partial_below_121() -> None:
+def test_tc038_calculate_growth_metrics_whz_partial_below_121():
     """Computes whz if some height <121, sets NaN where height >=121"""
     result = calculate_growth_metrics(
         np.array([60.0, 60.0]),
@@ -552,7 +552,7 @@ def test_tc038_calculate_growth_metrics_whz_partial_below_121() -> None:
     assert np.isnan(result["mod_whz"][1])
 
 
-def test_tc039_calculate_growth_metrics_missing_weight() -> None:
+def test_tc039_calculate_growth_metrics_missing_weight():
     """calculate_growth_metrics skips waz and bmiz when no weight"""
     result = calculate_growth_metrics(
         np.array([60.0]), np.array(["M"]), height=np.array([120.0]), measures=None
@@ -565,7 +565,7 @@ def test_tc039_calculate_growth_metrics_missing_weight() -> None:
     assert "_bivbmi" not in result
 
 
-def test_tc040_calculate_growth_metrics_missing_height() -> None:
+def test_tc040_calculate_growth_metrics_missing_height():
     """skips haz and bmiz when no height"""
     result = calculate_growth_metrics(
         np.array([60.0]), np.array(["M"]), weight=np.array([25.0]), measures=None
@@ -577,7 +577,7 @@ def test_tc040_calculate_growth_metrics_missing_height() -> None:
     assert "_bivbmi" not in result
 
 
-def test_tc041_calculate_growth_metrics_headcz() -> None:
+def test_tc041_calculate_growth_metrics_headcz():
     """calculate_growth_metrics computes headcz when provided"""
     result = calculate_growth_metrics(
         np.array([60.0]),
@@ -588,7 +588,7 @@ def test_tc041_calculate_growth_metrics_headcz() -> None:
     assert "headcz" in result
 
 
-def test_tc042_lms_zscore_negative_L() -> None:
+def test_tc042_lms_zscore_negative_L():
     """LMS zscore with negative L"""
     X = np.array(17.9)
     L = np.array(-0.5)
@@ -598,7 +598,7 @@ def test_tc042_lms_zscore_negative_L() -> None:
     assert np.isfinite(z)
 
 
-def test_tc043_extended_bmiz_2d_array() -> None:
+def test_tc043_extended_bmiz_2d_array():
     """Extended BMIz for 2D arrays"""
     bmi = np.array([[20.0, 100.0]])
     p95 = np.array([[25.0, 25.0]])
@@ -611,7 +611,7 @@ def test_tc043_extended_bmiz_2d_array() -> None:
     assert z[0, 1] <= 8.21
 
 
-def test_tc044_calculate_growth_metrics_wlz() -> None:
+def test_tc044_calculate_growth_metrics_wlz():
     """calculate_growth_metrics computes wlz (alias for whz) when requested"""
     result = calculate_growth_metrics(
         np.array([60.0]),
@@ -624,13 +624,13 @@ def test_tc044_calculate_growth_metrics_wlz() -> None:
     assert "mod_whz" in result
 
 
-def test_tc045_calculate_growth_metrics_empty() -> None:
+def test_tc045_calculate_growth_metrics_empty():
     """calculate_growth_metrics handles empty arrays"""
     result = calculate_growth_metrics(np.array([]), np.array([]))
     assert result == {}
 
 
-def test_tc046_lms_zscore_large_L() -> None:
+def test_tc046_lms_zscore_large_L():
     """LMS zscore with large L"""
     X = np.array(18.0)
     L = np.array(2.0)
@@ -640,7 +640,7 @@ def test_tc046_lms_zscore_large_L() -> None:
     assert np.isfinite(z)
 
 
-def test_tc047_modified_zscore_different_z_tail() -> None:
+def test_tc047_modified_zscore_different_z_tail():
     """Modified Z-Score with different z_tail"""
     X = np.array(20.0)
     M = np.array(18.0)
@@ -650,7 +650,7 @@ def test_tc047_modified_zscore_different_z_tail() -> None:
     assert mod_z != 0
 
 
-def test_tc048_extended_bmiz_all_normal() -> None:
+def test_tc048_extended_bmiz_all_normal():
     """Extended BMIz with all z < 1.645"""
     bmi = np.array([20.0, 21.0])
     p95 = np.array([25.0, 25.0])
@@ -675,7 +675,7 @@ def test_tc048_extended_bmiz_all_normal() -> None:
 )
 def test_tc049_hypothesis_extended_bmiz_branches(  # type: ignore[no-untyped-def]
     bmi: list[float], p95: list[float], sigma: list[float], original_z: list[float]
-) -> None:
+):
     """Hypothesis test for extended_bmiz branches (z<1.645 vs >=1.645)"""
     n = min(len(bmi), len(p95), len(sigma), len(original_z))
     bmi_arr = np.array(bmi[:n])
@@ -711,7 +711,7 @@ def test_tc049_hypothesis_extended_bmiz_branches(  # type: ignore[no-untyped-def
         )  # Should be different after extension
 
 
-def test_tc050_lms_zscore_empty_array() -> None:
+def test_tc050_lms_zscore_empty_array():
     """lms_zscore handles n=0 edge case"""
     X = np.array([], dtype=np.float64)
     L = np.array([], dtype=np.float64)
@@ -722,7 +722,7 @@ def test_tc050_lms_zscore_empty_array() -> None:
     assert np.array_equal(z, np.array([], dtype=np.float64))
 
 
-def test_tc051_extended_bmiz_empty_array() -> None:
+def test_tc051_extended_bmiz_empty_array():
     """extended_bmiz handles n=0 edge case"""
     bmi = np.array([], dtype=np.float64)
     p95 = np.array([], dtype=np.float64)
@@ -733,7 +733,7 @@ def test_tc051_extended_bmiz_empty_array() -> None:
     assert np.array_equal(z, np.array([], dtype=np.float64))
 
 
-def test_tc052_modified_zscore_empty_array() -> None:
+def test_tc052_modified_zscore_empty_array():
     """modified_zscore handles n=0 edge case"""
     X = np.array([], dtype=np.float64)
     M = np.array([], dtype=np.float64)
@@ -744,7 +744,7 @@ def test_tc052_modified_zscore_empty_array() -> None:
     assert np.array_equal(z, np.array([], dtype=np.float64))
 
 
-def test_tc053_l_zero_threshold_constant() -> None:
+def test_tc053_l_zero_threshold_constant():
     """Test L_ZERO_THRESHOLD constant usage in lms_zscore"""
     # Test with L just above threshold triggers L!=0 branch
     X = np.array([18.0])
@@ -761,7 +761,7 @@ def test_tc053_l_zero_threshold_constant() -> None:
     # Just ensure different paths are taken (both finite)
 
 
-def test_tc054_calculate_growth_metrics_whz_all_above_121() -> None:
+def test_tc054_calculate_growth_metrics_whz_all_above_121():
     """WHZ optimization: no computation when all heights >=121"""
     result = calculate_growth_metrics(
         np.array([60.0, 60.0]),
@@ -775,7 +775,7 @@ def test_tc054_calculate_growth_metrics_whz_all_above_121() -> None:
     assert "mod_whz" not in result
 
 
-def test_tc055_calculate_growth_metrics_whz_none_qualifying() -> None:
+def test_tc055_calculate_growth_metrics_whz_none_qualifying():
     """WHZ only computed and set where height <121, sets NaN elsewhere"""
     result = calculate_growth_metrics(
         np.array([60.0, 60.0]),
@@ -793,7 +793,7 @@ def test_tc055_calculate_growth_metrics_whz_none_qualifying() -> None:
     assert np.isnan(result["mod_whz"][1])
 
 
-def test_tc056_modified_zscore_cdc_examples() -> None:
+def test_tc056_modified_zscore_cdc_examples():
     """Validate modified_zscore with exact CDC examples from 'modified-z-scores.md'"""
     # Example values from CDC modified z-scores document
     # 200-month-old girl example: L=-2.18, M=20.76, S=0.148
@@ -813,7 +813,7 @@ def test_tc056_modified_zscore_cdc_examples() -> None:
     np.testing.assert_allclose(mod_z_below, [-4.13], rtol=1e-2, atol=0.01)
 
 
-def test_tc057_cdc_extended_example_below_95th() -> None:
+def test_tc057_cdc_extended_example_below_95th():
     """TC057: Test with CDC extended BMI example below 95th percentile"""
     # Example from CDC doc: Girl aged 9 years and 6 months (114.5 months) with BMI = 21.2
     # Below 95th percentile (P95 = 22.3979), so use LMS z-score formula
@@ -828,7 +828,7 @@ def test_tc057_cdc_extended_example_below_95th() -> None:
     np.testing.assert_allclose(z, [1.4215], atol=1e-3)
 
 
-def test_tc058_cdc_extended_example_above_95th() -> None:
+def test_tc058_cdc_extended_example_above_95th():
     """TC058: Test with CDC extended BMI example above 95th percentile"""
     # Example from CDC doc: Boy aged 4 years and 2 months (50.5 months) with BMI = 22.6
     # Above 95th percentile (P95 = 17.8219), sigma = 2.3983
@@ -844,7 +844,7 @@ def test_tc058_cdc_extended_example_above_95th() -> None:
     np.testing.assert_allclose(z, [2.83], atol=1e-2)
 
 
-def test_tc059_cdc_extended_lms_example_full() -> None:
+def test_tc059_cdc_extended_lms_example_full():
     """TC059: Test full BMI z-score with extension using CDC example values"""
     # Use the girl example: BMI = 21.2 below P95, so should use LMS directly and extended should not activate
     # For testing purposes, compute LMS z-score, then pass to extended_bmiz - should return original since < 1.645
@@ -865,7 +865,7 @@ def test_tc059_cdc_extended_lms_example_full() -> None:
     np.testing.assert_allclose(z_extended, original_z, atol=1e-6)
 
 
-def test_tc060_coverage_log_branch_in_modified_zscore() -> None:
+def test_tc060_coverage_log_branch_in_modified_zscore():
     """Cover the L≈0 log branch in modified_zscore that was missed"""
     # Create inputs where L ≈ 0 to trigger log branch
     X = np.array([18.0, 18.0])  # At median to make result predictable
@@ -878,7 +878,7 @@ def test_tc060_coverage_log_branch_in_modified_zscore() -> None:
     np.testing.assert_allclose(mod_z, [0.0, 0.0], atol=1e-4)
 
 
-def test_tc061_coverage_all_modified_measures_in_standard_zscores() -> None:
+def test_tc061_coverage_all_modified_measures_in_standard_zscores():
     """Cover all modified measure computations in _compute_standard_zscores"""
     # Create test data with all required arrays
     agemos = np.array([60.0, 60.0])
@@ -921,7 +921,7 @@ def test_tc061_coverage_all_modified_measures_in_standard_zscores() -> None:
         assert results[key].shape == (2,)
 
 
-def test_tc062_coverage_all_biv_flags_in_compute_biv_flags() -> None:
+def test_tc062_coverage_all_biv_flags_in_compute_biv_flags():
     """Cover all BIV flag computations in _compute_biv_flags that were missed"""
     # Create results dict with all modified z-scores
     results = {
@@ -968,7 +968,7 @@ def test_tc063_coverage_log_unit_warnings_height_only(caplog):
     )
 
 
-def test_tc064_coverage_inverse_lms_placeholder() -> None:
+def test_tc064_coverage_inverse_lms_placeholder():
     """Cover the inverse_lms placeholder function"""
     import biv.zscores as zscores_module
 
@@ -976,13 +976,13 @@ def test_tc064_coverage_inverse_lms_placeholder() -> None:
     zscores_module.inverse_lms()  # Should do nothing
 
 
-def test_tc065_coverage_validate_inputs_non_zero_length() -> None:
+def test_tc065_coverage_validate_inputs_non_zero_length():
     """Cover the n == 0 check in _validate_inputs"""
     with pytest.raises(ValueError, match="Age and sex arrays must not be empty"):
         _validate_inputs(np.array([]), np.array([]))
 
 
-def test_tc066_l_zero_branch_exact_threshold() -> None:
+def test_tc066_l_zero_branch_exact_threshold():
     """Test L≈0 branch with values exactly at L_ZERO_THRESHOLD"""
     import math
 
@@ -1033,7 +1033,7 @@ def test_tc067_lms_zscore_reshaping_2d3d_arrays(array_shape):
     assert np.all(np.abs(z_scores) < 10)  # Reasonable magnitude for z-scores
 
 
-def test_tc068_validate_inputs_normal() -> None:
+def test_tc068_validate_inputs_normal():
     """Test _validate_inputs with normal inputs"""
     agemos = np.array([60.0, 120.0])
     sex = np.array(["M", "F"])
@@ -1041,20 +1041,20 @@ def test_tc068_validate_inputs_normal() -> None:
     _validate_inputs(agemos, sex)
 
 
-def test_tc069_validate_inputs_empty_arrays() -> None:
+def test_tc069_validate_inputs_empty_arrays():
     """Test _validate_inputs with empty arrays"""
     with pytest.raises(ValueError, match="Age and sex arrays must not be empty"):
         _validate_inputs(np.array([]), np.array([]))
 
 
-def test_tc070_handle_age_limit_below_limit() -> None:
+def test_tc070_handle_age_limit_below_limit():
     """Test _handle_age_limit for ages below 241 months"""
     agemos = np.array([60.0, 120.0])
     mask = _handle_age_limit(agemos)
     assert np.all(mask == False)
 
 
-def test_tc071_handle_age_limit_above_limit() -> None:
+def test_tc071_handle_age_limit_above_limit():
     """Test _handle_age_limit for ages above 241 months"""
     agemos = np.array([240.0, 250.0])
     mask = _handle_age_limit(agemos)
@@ -1062,7 +1062,7 @@ def test_tc071_handle_age_limit_above_limit() -> None:
     assert mask[1] == True
 
 
-def test_tc072_log_unit_warnings_normal_height_weight(caplog) -> None:
+def test_tc072_log_unit_warnings_normal_height_weight(caplog):
     """Test _log_unit_warnings with normal height and weight"""
     import logging
 
@@ -1075,7 +1075,7 @@ def test_tc072_log_unit_warnings_normal_height_weight(caplog) -> None:
     assert len(caplog.records) == 0
 
 
-def test_tc073_log_unit_warnings_height_suspect_cm(caplog) -> None:
+def test_tc073_log_unit_warnings_height_suspect_cm(caplog):
     """Test _log_unit_warnings for height suspect cm (mean < 20)"""
     import logging
 
@@ -1090,7 +1090,7 @@ def test_tc073_log_unit_warnings_height_suspect_cm(caplog) -> None:
     )
 
 
-def test_tc074_log_unit_warnings_height_inches(caplog) -> None:
+def test_tc074_log_unit_warnings_height_inches(caplog):
     """Test _log_unit_warnings for height likely inches (>200 cm 95th pct)"""
     import logging
 
@@ -1102,7 +1102,7 @@ def test_tc074_log_unit_warnings_height_inches(caplog) -> None:
     assert any("may be inches" in str(record.message) for record in caplog.records)
 
 
-def test_tc075_log_unit_warnings_weight_lbs(caplog) -> None:
+def test_tc075_log_unit_warnings_weight_lbs(caplog):
     """Test _log_unit_warnings for weight likely lbs (>300 kg 99th pct)"""
     import logging
 
@@ -1114,7 +1114,7 @@ def test_tc075_log_unit_warnings_weight_lbs(caplog) -> None:
     assert any("may be lbs" in str(record.message) for record in caplog.records)
 
 
-def test_tc076_log_unit_warnings_age_years(caplog) -> None:
+def test_tc076_log_unit_warnings_age_years(caplog):
     """Test _log_unit_warnings for age likely years"""
     import logging
 
@@ -1127,7 +1127,7 @@ def test_tc076_log_unit_warnings_age_years(caplog) -> None:
     assert any("suggest years" in str(record.message) for record in caplog.records)
 
 
-def test_tc077_compute_bmi_with_height_weight() -> None:
+def test_tc077_compute_bmi_with_height_weight():
     """Test _compute_bmi with both height and weight"""
     height = np.array([100.0, 120.0])  # in cm
     weight = np.array([25.0, 30.0])  # in kg
@@ -1137,21 +1137,21 @@ def test_tc077_compute_bmi_with_height_weight() -> None:
     np.testing.assert_allclose(bmi, expected, atol=1e-5)
 
 
-def test_tc078_compute_bmi_with_height_only() -> None:
+def test_tc078_compute_bmi_with_height_only():
     """Test _compute_bmi with height only (no weight)"""
     height = np.array([120.0])
     bmi = _compute_bmi(height, None)
     assert bmi is None
 
 
-def test_tc079_compute_bmi_with_weight_only() -> None:
+def test_tc079_compute_bmi_with_weight_only():
     """Test _compute_bmi with weight only (no height)"""
     weight = np.array([25.0])
     bmi = _compute_bmi(None, weight)
     assert bmi is None
 
 
-def test_tc080_compute_standard_zscores_all_measures() -> None:
+def test_tc080_compute_standard_zscores_all_measures():
     """Test _compute_standard_zscores with all measures including modified"""
     agemos = np.array([60.0, 60.0])
     sex = np.array(["M", "M"])
@@ -1208,7 +1208,7 @@ def test_tc080_compute_standard_zscores_all_measures() -> None:
         assert np.all(np.isfinite(results[key]) | np.isnan(results[key]))
 
 
-def test_tc081_compute_biv_flags_missing_mod_measures() -> None:
+def test_tc081_compute_biv_flags_missing_mod_measures():
     """Test _compute_biv_flags when mod measures not in results"""
     results = {}  # No mod measures
     measures = ["_bivbmi", "_bivwaz", "_bivhaz", "_bivheadcz", "_bivwh"]
@@ -1218,7 +1218,7 @@ def test_tc081_compute_biv_flags_missing_mod_measures() -> None:
     assert len(biv_flags) == 0
 
 
-def test_tc082_compute_whz_qualifying_heights() -> None:
+def test_tc082_compute_whz_qualifying_heights():
     """Test _compute_whz when some heights qualify (<121cm)"""
     measures = ["whz"]
     height = np.array([110.0, 130.0])
@@ -1240,7 +1240,7 @@ def test_tc082_compute_whz_qualifying_heights() -> None:
     assert np.isnan(whz_results["whz"][1])  # height=130 >=121
 
 
-def test_tc083_compute_whz_no_qualifying_heights() -> None:
+def test_tc083_compute_whz_no_qualifying_heights():
     """Test _compute_whz when no heights qualify (>=121cm)"""
     measures = ["whz"]
     height = np.array([130.0, 140.0])
@@ -1258,20 +1258,20 @@ def test_tc083_compute_whz_no_qualifying_heights() -> None:
     assert len(whz_results) == 0
 
 
-def test_tc084_get_reference_data_path() -> None:
+def test_tc084_get_reference_data_path():
     """Test _get_reference_data_path returns correct path"""
     path = _get_reference_data_path()
     assert path == "biv.data"
 
 
-def test_tc085_load_reference_data_mock() -> None:
+def test_tc085_load_reference_data_mock():
     """Test _load_reference_data with mock data handling"""
     # This will test the error handling path since data file likely doesn't exist
     with pytest.raises((FileNotFoundError, ValueError)):
         _load_reference_data()
 
 
-def test_tc086_validate_loaded_data_integrity_valid() -> None:
+def test_tc086_validate_loaded_data_integrity_valid():
     """Test validate_loaded_data_integrity with valid data"""
     # Create mock valid data
     valid_data = {
@@ -1334,14 +1334,14 @@ def test_tc086_validate_loaded_data_integrity_valid() -> None:
     assert is_valid
 
 
-def test_tc087_validate_loaded_data_integrity_missing_keys() -> None:
+def test_tc087_validate_loaded_data_integrity_missing_keys():
     """Test validate_loaded_data_integrity with missing keys"""
     invalid_data = {"waz_male": np.array([])}  # Missing required keys
     is_valid = validate_loaded_data_integrity(invalid_data)
     assert not is_valid
 
 
-def test_tc088_validate_loaded_data_integrity_invalid_dtype() -> None:
+def test_tc088_validate_loaded_data_integrity_invalid_dtype():
     """Test validate_loaded_data_integrity with invalid data types"""
     invalid_data = {
         key: np.array([[1, 2, 3]])
@@ -1362,7 +1362,7 @@ def test_tc088_validate_loaded_data_integrity_invalid_dtype() -> None:
     assert not is_valid
 
 
-def test_tc089_validate_loaded_data_integrity_negative_data() -> None:
+def test_tc089_validate_loaded_data_integrity_negative_data():
     """Test validate_loaded_data_integrity with negative M values"""
     invalid_data = {
         "waz_male": np.array(
@@ -1374,7 +1374,7 @@ def test_tc089_validate_loaded_data_integrity_negative_data() -> None:
     assert not is_valid
 
 
-def test_tc090_compute_sha256_hash() -> None:
+def test_tc090_compute_sha256_hash():
     """Test compute_sha256 function"""
     content = "test data"
     hash_result = compute_sha256(content)
@@ -1383,14 +1383,14 @@ def test_tc090_compute_sha256_hash() -> None:
     assert hash_result == expected
 
 
-def test_tc091_is_version_compatible_placeholder() -> None:
+def test_tc091_is_version_compatible_placeholder():
     """Test IS_VERSION_COMPATIBLE_FUNC placeholder"""
     # This is a placeholder function that always returns True
     result = IS_VERSION_COMPATIBLE_FUNC({})
     assert result is True
 
 
-def test_tc092_interpolate_lms_normal_case() -> None:
+def test_tc092_interpolate_lms_normal_case():
     """Test interpolate_lms with normal case"""
     from unittest.mock import patch
 
@@ -1426,7 +1426,7 @@ def test_tc092_interpolate_lms_normal_case() -> None:
         assert np.all(S == 0.1)  # Test data has constant S
 
 
-def test_tc093_calculate_growth_metrics_qualifying_whz() -> None:
+def test_tc093_calculate_growth_metrics_qualifying_whz():
     """Test calculate_growth_metrics includes whz when heights qualify"""
     result = calculate_growth_metrics(
         np.array([60.0, 60.0]),
@@ -1445,7 +1445,7 @@ def test_tc093_calculate_growth_metrics_qualifying_whz() -> None:
     assert np.isnan(result["mod_whz"][1])
 
 
-def test_tc094_calculate_growth_metrics_biv_flags_computation() -> None:
+def test_tc094_calculate_growth_metrics_biv_flags_computation():
     """Test calculate_growth_metrics computes BIV flags correctly based on mod z-scores"""
     # Create data that will give known extreme z-scores
     agemos = np.array([60.0, 60.0])
@@ -1465,7 +1465,7 @@ def test_tc094_calculate_growth_metrics_biv_flags_computation() -> None:
     assert result["_bivbmi"][1] == True  # Extreme high BMI
 
 
-def test_tc095_calculate_growth_metrics_measure_subset_with_all_arrays() -> None:
+def test_tc095_calculate_growth_metrics_measure_subset_with_all_arrays():
     """Test calculate_growth_metrics with measure subset when all measurement arrays provided"""
     # Test that when measures are requested but arrays are provided, they get computed
     measures = [

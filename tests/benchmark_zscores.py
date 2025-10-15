@@ -9,7 +9,7 @@ import numpy as np
 from biv.zscores import lms_zscore, calculate_growth_metrics
 
 
-def benchmark_lms_zscore() -> None:
+def benchmark_lms_zscore():
     """Benchmark LMS z-score calculation performance."""
     # Generate test data
     n = 100000  # 100K rows target <1μs/row
@@ -41,7 +41,7 @@ def benchmark_lms_zscore() -> None:
     assert not np.all(np.isnan(z_scores))
 
 
-def benchmark_large_dataset() -> None:
+def benchmark_large_dataset():
     """Benchmark with 1M rows (subset of 10M target)."""
     n = 1000000  # 1M rows for feasible testing
 
@@ -65,7 +65,7 @@ def benchmark_large_dataset() -> None:
     assert seconds_per_10M < 10.0, ".2f"
 
 
-def test_performance_targets() -> None:
+def test_performance_targets():
     """Run performance validations."""
     benchmark_lms_zscore()
     benchmark_large_dataset()

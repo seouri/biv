@@ -7,12 +7,12 @@ from biv.methods.base import BaseDetector
 from typing import Dict
 
 
-def test_tc001_instantiating_base_detector_raises_type_error() -> None:
+def test_tc001_instantiating_base_detector_raises_type_error():
     with pytest.raises(TypeError):
         BaseDetector()  # type: ignore[abstract]
 
 
-def test_tc002_subclass_without_detect_raises_type_error() -> None:
+def test_tc002_subclass_without_detect_raises_type_error():
     class Concrete(BaseDetector):
         pass
 
@@ -20,9 +20,9 @@ def test_tc002_subclass_without_detect_raises_type_error() -> None:
         Concrete()  # type: ignore[abstract]
 
 
-def test_tc003_validate_column_passes_for_existing_column() -> None:
+def test_tc003_validate_column_passes_for_existing_column():
     class Concrete(BaseDetector):
-        def validate_config(self) -> None:
+        def validate_config(self):
             pass
 
         def detect(self, df: pd.DataFrame, columns: list[str]) -> Dict[str, pd.Series]:
@@ -37,9 +37,9 @@ def test_tc003_validate_column_passes_for_existing_column() -> None:
         pytest.fail("Validation should not raise ValueError for existing column")
 
 
-def test_tc004_detect_validates_multiple_columns() -> None:
+def test_tc004_detect_validates_multiple_columns():
     class Concrete(BaseDetector):
-        def validate_config(self) -> None:
+        def validate_config(self):
             pass
 
         def detect(self, df: pd.DataFrame, columns: list[str]) -> Dict[str, pd.Series]:
@@ -59,14 +59,14 @@ def test_tc004_detect_validates_multiple_columns() -> None:
         detector.detect(df, ["col1", "missing"])
 
 
-def test_tc005_initialization_accepts_method_specific_configs() -> None:
+def test_tc005_initialization_accepts_method_specific_configs():
     class Concrete(BaseDetector):
-        def __init__(self, min_val: int = 0, max_val: int = 100) -> None:
+        def __init__(self, min_val: int = 0, max_val: int = 100):
             super().__init__()
             self.min_val = min_val
             self.max_val = max_val
 
-        def validate_config(self) -> None:
+        def validate_config(self):
             pass
 
         def detect(self, df: pd.DataFrame, columns: list[str]) -> Dict[str, pd.Series]:
@@ -77,15 +77,15 @@ def test_tc005_initialization_accepts_method_specific_configs() -> None:
     assert detector.max_val == 200
 
 
-def test_tc006_detect_validates_multiple_columns() -> None:
+def test_tc006_detect_validates_multiple_columns():
     class Concrete(BaseDetector):
-        def __init__(self, min_val: int = 0, max_val: int = 100) -> None:
+        def __init__(self, min_val: int = 0, max_val: int = 100):
             super().__init__()
             self.min_val = min_val
             self.max_val = max_val
             self.validate_config()
 
-        def validate_config(self) -> None:
+        def validate_config(self):
             if self.min_val >= self.max_val:
                 raise ValueError("min_val must be less than max_val")
 
@@ -99,9 +99,9 @@ def test_tc006_detect_validates_multiple_columns() -> None:
         Concrete(min_val=50, max_val=50)  # invalid
 
 
-def test_detect_does_not_modify_input_dataframe() -> None:
+def test_detect_does_not_modify_input_dataframe():
     class Concrete(BaseDetector):
-        def validate_config(self) -> None:
+        def validate_config(self):
             pass
 
         def detect(self, df: pd.DataFrame, columns: list[str]) -> Dict[str, pd.Series]:
@@ -118,9 +118,9 @@ def test_detect_does_not_modify_input_dataframe() -> None:
     pd.testing.assert_frame_equal(original_df, copy_df)  # df unchanged
 
 
-def test_detect_handles_nan_values_appropriately() -> None:
+def test_detect_handles_nan_values_appropriately():
     class Concrete(BaseDetector):
-        def validate_config(self) -> None:
+        def validate_config(self):
             pass
 
         def detect(self, df: pd.DataFrame, columns: list[str]) -> Dict[str, pd.Series]:
@@ -145,9 +145,9 @@ def test_detect_handles_nan_values_appropriately() -> None:
     pd.testing.assert_series_equal(result["col2"], expected_col2)
 
 
-def test_detect_handles_empty_dataframe() -> None:
+def test_detect_handles_empty_dataframe():
     class Concrete(BaseDetector):
-        def validate_config(self) -> None:
+        def validate_config(self):
             pass
 
         def detect(self, df: pd.DataFrame, columns: list[str]) -> Dict[str, pd.Series]:
@@ -160,9 +160,9 @@ def test_detect_handles_empty_dataframe() -> None:
     assert len(result) == 0
 
 
-def test_detect_handles_single_row_dataframe() -> None:
+def test_detect_handles_single_row_dataframe():
     class Concrete(BaseDetector):
-        def validate_config(self) -> None:
+        def validate_config(self):
             pass
 
         def detect(self, df: pd.DataFrame, columns: list[str]) -> Dict[str, pd.Series]:
@@ -175,9 +175,9 @@ def test_detect_handles_single_row_dataframe() -> None:
     assert result["col1"].iloc[0] is np.False_  # or == False
 
 
-def test_detect_handles_non_numeric_columns() -> None:
+def test_detect_handles_non_numeric_columns():
     class Concrete(BaseDetector):
-        def validate_config(self) -> None:
+        def validate_config(self):
             pass
 
         def detect(self, df: pd.DataFrame, columns: list[str]) -> Dict[str, pd.Series]:
@@ -190,9 +190,9 @@ def test_detect_handles_non_numeric_columns() -> None:
     assert result["col1"].iloc[0] == "flag"
 
 
-def test_validate_column_raises_for_nonexistent_column() -> None:
+def test_validate_column_raises_for_nonexistent_column():
     class Concrete(BaseDetector):
-        def validate_config(self) -> None:
+        def validate_config(self):
             pass
 
         def detect(self, df: pd.DataFrame, columns: list[str]) -> Dict[str, pd.Series]:
