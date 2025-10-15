@@ -12,13 +12,13 @@ repos:
     rev: v0.13.3
     hooks:
       - id: ruff-format
-        args: [--fix]
       - id: ruff
+        args: [--fix]
   - repo: local
     hooks:
       - id: mypy
         name: mypy
-        entry: uv run mypy --no-error-summary src tests
+        entry: bash -c 'PYTHONPATH=src uv run mypy src tests'
         language: system
         files: \.py$
         types: [python]

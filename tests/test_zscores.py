@@ -185,11 +185,11 @@ def test_tc020_hypothesis_precision(  # type: ignore[no-untyped-def]
     # For a few cases at M (median), z should be close to 0
     # But only when L and X=M conditions are met
     valid_median_cases = (
-        (np.abs(X_arr - M_arr) < 0.01) & (np.abs(L_arr) >= 1e-6) & (S_arr > 0)
+        (np.abs(X_arr - M_arr) < 1e-4) & (np.abs(L_arr) >= 1e-6) & (S_arr > 0)
     )
     if np.any(valid_median_cases):
         z_at_median = z_scores[valid_median_cases]
-        assert np.all(np.abs(z_at_median) < 1.0)  # Should be reasonably close to 0
+        assert np.all(np.abs(z_at_median) < 0.5)  # Should be reasonably close to 0
 
 
 def test_tc021_batching_large_n() -> None:  # type: ignore[no-untyped-def]

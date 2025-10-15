@@ -83,25 +83,25 @@ Implement in `biv.zscores.py` (vectorized); import by `ZScoreDetector` in `biv.m
       bmi_z0 = M
       bmi_z_pos = M * (1 + L * S * z_tail) ** (1 / L)
       bmi_z_neg = M * (1 + L * S * (-z_tail)) ** (1 / L)
-      
+
       mod_z = np.full_like(X, np.nan)
       pos_mask = X > M
       neg_mask = X < M
-      
+
       # For above median
       if np.any(pos_mask):
           sd_dist_pos = 0.5 * (bmi_z_pos - M)
           mod_z[pos_mask] = (X[pos_mask] - M[pos_mask]) / sd_dist_pos[pos_mask]
-      
+
       # For below median
       if np.any(neg_mask):
           sd_dist_neg = 0.5 * (M - bmi_z_neg)
           mod_z[neg_mask] = (X[neg_mask] - M[neg_mask]) / sd_dist_neg[neg_mask]
-      
+
       # At median (z=0)
       med_mask = X == M
       mod_z[med_mask] = 0.0
-      
+
       return mod_z
   ```
   - Calculate per sex/measure/age using interp LMS.
@@ -347,7 +347,7 @@ This phased plan ensures incremental, testable development per TDD, with full in
 
 **Dependencies**: Phase 1 complete (core functions ready).
 
-**Test Case Table for Data Acquisition and Download**:
+**Test Case Table for Data Acquisition and Download** (Updated to reflect all 84 tests in test_download_data.py):
 
 | Test Case ID | Description | Input | Expected Output | Edge Case? | Function Tested |
 |--------------|-------------|-------|-----------------|-------------|-----------------|
@@ -358,13 +358,13 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC005 | Compute SHA-256 hash correctly | Sample CSV content | 64-character hex string matching openssl output | No | compute_sha256 |
 | TC006 | Parse CDC BMI CSV with essential columns only | bmi-age-2022.csv content | Structured arrays with L,M,S,P95,sigma,agemos | No | parse_cdc_csv |
 | TC007 | Parse CDC wtage CSV with essential columns only | wtage.csv content | Structured arrays with L,M,S,Agemos | No | parse_cdc_csv |
-| TC008 | Parse WHO boys CSV with essential columns only | WHO-Boys-Weight-for-age-Percentiles.csv content | Structured array with Month,L,M,S | No | parse_who_csv |
-| TC009 | Parse WHO girls CSV with essential columns only | WHO-Girls-Head-Circumference-for-age-Percentiles.csv content | Structured array with Month,L,M,S | No | parse_who_csv |
+| TC008 | Parse WHO boys weight-for-age CSV with essential columns only | WHO-Boys-Weight-for-age-Percentiles.csv content | Structured array with age,L,M,S unified from "Month" | No | parse_who_csv |
+| TC009 | Parse WHO girls head-circumference-for-age CSV with essential columns only | WHO-Girls-Head-Circumference-for-age-Percentiles.csv content | Structured array with age,L,M,S from "Month" | No | parse_who_csv |
 | TC010 | Handle CDC sex splitting: males only | CDC CSV with Sex=1 rows only | Only _male arrays created | No | parse_cdc_csv |
 | TC011 | Handle CDC sex splitting: females only | CDC CSV with Sex=2 rows only | Only _female arrays created | No | parse_cdc_csv |
 | TC012 | Handle CDC mixed sexes | CDC CSV with both Sex=1 and 2 | Both _male and _female arrays | No | parse_cdc_csv |
 | TC013 | Skip non-essential columns during parsing | CDC CSV with 35 columns | Only 6/4 essential columns kept | No | parse_cdc_csv/parse_who_csv |
-| TC014 | Validate column presence in header | CSV missing essential column | Logs warning, uses fallback | Yes | parse_cdc_csv/parse_who_csv |
+| TC014 | Validate column presence in header - missing column | CSV missing essential column | Logs warning, uses fallback | Yes | parse_cdc_csv/parse_who_csv |
 | TC015 | Handle malformed CSV lines | CSV with varying column counts | Skips malformed rows with logging | Yes | parse_cdc_csv/parse_who_csv |
 | TC016 | Convert empty strings to NaN | CSV with empty fields | NaN values in arrays | No | parse_cdc_csv/parse_who_csv |
 | TC017 | Save multiple arrays to .npz | Dict of 16 structured arrays | Single .npz file created | No | save_npz |
@@ -381,23 +381,23 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC028 | Test measure mapping from filenames | WHO wtage input | waz measure in output | No | parse_who_csv |
 | TC029 | Handle BOM in WHO header | CSV with \ufeff prefix | Cleaned headers for column lookup | Yes | parse_who_csv |
 | TC030 | Robust column index finding | Variable spaces in header | Correct column positions found | Yes | parse_cdc_csv/parse_who_csv |
-| TC031 | Parse WHO boys weight-for-length CSV | WHO-Boys-Weight-for-length-Percentiles.csv content | Structured array with age,L,M,S unified from "Length" | No | parse_who_csv |
-| TC032 | Parse WHO girls weight-for-length CSV | WHO-Girls-Weight-for-length-Percentiles.csv content | Structured array with age,L,M,S unified from "Length" | No | parse_who_csv |
+| TC031 | Parse WHO boys weight-for-length CSV (Length column) | WHO-Boys-Weight-for-length-Percentiles.csv content | Structured array with age,L,M,S unified from "Length" | No | parse_who_csv |
+| TC032 | Parse WHO girls weight-for-length CSV (Length column) | WHO-Girls-Weight-for-length-Percentiles.csv content | Structured array with age,L,M,S unified from "Length" | No | parse_who_csv |
 | TC033 | Verify Month column used for non-wtlen WHO files | WHO-Boys-Weight-for-age-Percentiles.csv content | age field populated from "Month" column | No | parse_who_csv |
-| TC034 | Test age column unification | Both Month and Length inputs | All WHO arrays have "age" field with correct values | No | parse_who_csv |
+| TC034 | Test age column unification for wtlen | WHO wtlen csv | age field populated from "Length" column | No | parse_who_csv |
 | TC035 | Handle missing Month or Length columns in WHO files | WHO content missing age column | Logs warning, continues with available data | Yes | parse_who_csv |
 | TC036 | Ensure WHO age-based data filtered to <24 months | WHO wtage csv content | Only ages <24 in waz_male array | No | parse_who_csv |
 | TC037 | Ensure WHO wtlen data includes ALL values from original file, unfiltered | WHO wtlen csv content | All height/length rows in wlz_male array | No | parse_who_csv |
 | TC038 | Validate raises for non-finite age values | age array with inf | ValueError | Yes | validate_array |
 | TC039 | Validate handles missing age column gracefully | array without age col | No raise | Yes | validate_array |
-| TC040 | Validate raises for negative M values | negative M in array | ValueError | Yes | validate_array |
+| TC040 | Validate allows negative L values | negative L in array | No raise (allowed) | No | validate_array |
 | TC041 | Validate raises for negative S values in WHO data | negative S in who array | ValueError | Yes | validate_array |
-| TC042 | Validate raises for non-monotonic decreasing ages | age not increasing | ValueError | Yes | validate_array |
+| TC042 | Validate raises for non-monotonic ages | age not increasing | ValueError | Yes | validate_array |
 | TC043 | Validate raises for negative P95 in CDC data | negative P95 in cdc array | ValueError | Yes | validate_array |
 | TC044 | Validate raises for non-finite L in CDC | inf L in cdc array | ValueError | Yes | validate_array |
 | TC045 | Validate logs warning for empty array | empty array passed | Warning logged | Yes | validate_array |
 | TC046 | Validate passes for valid array | valid array inputs | No raise | No | validate_array |
-| TC047 | Handle special characters in header like (cm) | header with (cm) | Skip invalid rows | Yes | parse_who_csv |
+| TC047 | Handle special characters in header like (cm) | header with (cm) | Skips invalid rows | Yes | parse_who_csv |
 | TC048 | Parse WHO wtage and filter out ages >=24 | wtage with age>24 | Only <24 in array | No | parse_who_csv |
 | TC049 | Handle malformed CSV lines with varying columns | csv with missing cols | Continue with NaN | Yes | parse_who_csv |
 | TC050 | Main with source_filter='cdc' only downloads CDC sources | source_filter='cdc', force | Only CDC downloads called | No | main |
@@ -405,10 +405,35 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC052 | Main strict_mode=True raises on error | strict=True, failure | Raises RuntimeError | Yes | main |
 | TC053 | Main without strict mode continues on error | strict=False, failure | Continues, logs error | Yes | main |
 | TC054 | Main skips download if timestamp recent | existing .npz recent | Skip download | No | main |
-| TC056 | Parse CDC statage naming -> haz_male/haz_female | statage.csv content | Arrays named haz_male, haz_female | No | parse_cdc_csv |
-| TC057 | Parse CDC statage with missing Sex column raises | statage.csv missing Sex | ValueError on missing header key | Yes | parse_cdc_csv |
-| TC058 | Parse WHO logs warning for missing essential columns | WHO CSV missing L/M/S | Warning logged for each missing column | Yes | parse_who_csv |
-| TC059 | Main calls pbar set_postfix and update | Force download call | set_postfix, update called on tqdm | No | main |
+| TC055 | Test parse CDC statage naming -> haz_male/haz_female | statage.csv content | Arrays named haz_male, haz_female | No | parse_cdc_csv |
+| TC056 | Parse CDC statage with missing Sex column raises | statage.csv missing Sex | ValueError on missing header key | Yes | parse_cdc_csv |
+| TC057 | Parse WHO logs warning for missing essential columns | WHO CSV missing L/M/S | Warning logged for each missing column | Yes | parse_who_csv |
+| TC058 | Main calls pbar set_postfix and update | Force download call | set_postfix, update called on tqdm | No | main |
+| TC060 | Download retry on transient errors | HTTP connection issues | Retry logic applied | Yes | download_csv |
+| TC061 | Download fails after max retries exceeded | Persistent connection failure | Exception raised | Yes | download_csv |
+| TC062 | Download with custom timeout | timeout=60 | Uses 60s timeout | No | download_csv |
+| TC063 | Skip download when hash matches | existing .npz with matching hash | Download skipped | No | main |
+| TC064 | Force download ignores hash | force=True with matching hash | Download forced | No | main |
+| TC065 | Parse WHO with extra spaces in header (not supported) | header with trailing spaces | Empty result due to column mismatches | Yes | parse_who_csv |
+| TC066 | Parse CDC with tab separators (not supported) | tab-delimited CSV | ValueError on Sex column not found | Yes | parse_cdc_csv |
+| TC067 | Parse WHO empty header column | header with empty column names | Handles gracefully | Yes | parse_who_csv |
+| TC068 | Parse CDC exponential notation | floats in scientific notation | Parsed correctly | No | parse_cdc_csv |
+| TC069 | Parse WHO quoted values (not supported) | quoted CSV values | Empty result due to column mismatches | Yes | parse_who_csv |
+| TC070 | Parse CDC Windows line endings (CRLF) | CSV with \r\n | Parsed correctly | No | parse_cdc_csv |
+| TC071 | Parse WHO minimum viable CSV | CSV with only Month,L,M,S | Parsed successfully | No | parse_who_csv |
+| TC072 | Metadata timestamp format | timestamp data | Formatted correctly | No | save_npz |
+| TC073 | Metadata hash storage | hash string | Stored as fixed length | No | save_npz |
+| TC074 | Main updates metadata on skip | skip due to timestamp | Metadata updated | No | main |
+| TC075 | Validate array all NaN handling | array with all NaN | No crash, warnings logged | No | validate_array |
+| TC076 | Parse large CSV performance | 100-row CSV | Completes in <1s | No | parse_who_csv |
+| TC077 | Memory efficiency - no unnecessary copies | standard CSV parsing | Arrays not copied | No | parse_who_csv |
+| TC078 | Main with empty source filter | source_filter='' | Downloads all sources | No | main |
+| TC079 | Parse CDC invalid sex values filtered | sex values not 1 or 2 | Invalid sexes ignored | Yes | parse_cdc_csv |
+| TC080 | Validate array extreme valid values | large finite floats | Validation passes | No | validate_array |
+| TC081 | Validate non-finite age | inf in age | ValueError | Yes | validate_array |
+| TC082 | Validate no age column | missing age field | No raise | Yes | validate_array |
+| TC083 | Validate negative M | negative median | ValueError | Yes | validate_array |
+| TC084 | Validate monotonic decreasing ages | non-increasing ages | ValueError | Yes | validate_array |
 
 ##### Phase 3: ZScoreDetector Class Implementation
 
