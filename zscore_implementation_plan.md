@@ -266,7 +266,7 @@ This phased plan ensures incremental, testable development per TDD, with full in
 
 **Dependencies**: None (use mocked data if needed; data phase follows).
 
-**Test Case Table for Core Functions** (Updated to reflect all tests in this branch):
+**Test Case Table for Core Functions** (Updated to reflect all tests in tests/test_zscores.py):
 
 | Test Case ID | Description | Input | Expected Output | Edge Case? |
 |--------------|-------------|-------|-----------------|------------|
@@ -328,6 +328,14 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC056 | Test with CDC extended BMI example below 95th percentile |Girl aged 9y6m (114.5mo), BMI=21.2, L=-2.257782149, M=16.57626713, S=0.132796819 | z=1.4215 | No |
 | TC057 | Test with CDC extended BMI example above 95th percentile |Boy aged 4y2m (50.5mo), BMI=22.6, P95=17.8219, sigma=2.3983 | z=2.83 | No |
 | TC058 | Test full BMI z-score with extension using CDC example values |Girl 114.5mo, BMI=21.2 <P95, LMS z <1.645, extend returns original | z=1.4215, no extension | No |
+| TC059 | Cover the L≈0 log branch in modified_zscore that was missed | X=18.0, M=18.0, L=0.00001, S=0.1 | mod_z≈0.0 | Yes |
+| TC060 | Cover all modified measure computations in _compute_standard_zscores | agemos=[60,60], sex=['M','M'], height=[120,120], weight=[25,25], head_circ=[40,40], bmi=[20,20], mock_L/M/S, measures=['mod_waz', 'mod_haz', 'mod_headcz', 'mod_bmiz'] | All modified measures computed | No |
+| TC061 | Cover all BIV flag computations in _compute_biv_flags that were missed | results dict with mod_waz, mod_haz, mod_bmiz, mod_headcz, mod_whz arrays, measures=['_bivwaz', '_bivhaz', '_bivbmi', '_bivheadcz', '_bivwh'] | All BIV flags with correct boolean logic | No |
+| TC062 | Cover the height unit warning in _log_unit_warnings | agemos=[60], height=[15] (below 20cm), weight=None | Height warning logged | Yes |
+| TC063 | Cover the inverse_lms placeholder function | None | No error | No |
+| TC064 | Cover the n == 0 check in _validate_inputs | Empty agemos, sex arrays | ValueError raised | Yes |
+| TC065 | Test L≈0 branch with values exactly at L_ZERO_THRESHOLD | X=1.0, L=L_ZERO_THRESHOLD ± small value, M=1.0, S=0.1 | Finite mod_z ≈0 | Yes |
+| TC066 | Test lms_zscore with 2D and 3D arrays to cover reshaping logic | X/L/M/S reshaped to given shape, X slightly above M | Same shape z-scores, all finite, reasonable magnitude | No |
 
 ##### Phase 2: Data Acquisition and Preprocessing
 
@@ -530,24 +538,44 @@ def detect(self, df: pd.DataFrame, columns: list[str]) -> Dict[str, pd.Series]:
 
 **Test Case Table for ZScoreDetector** (Updated with additional edge cases):
 
+#### Test Case Table for ZScoreDetector** (Updated with all test classes, unique sequential TC IDs):
+
 | Test Case ID | Description | Input | Expected Output | Edge Case? |
 |--------------|-------------|-------|-----------------|------------|
-| TC001 | Instantiate ZScoreDetector with valid config | {} (defaults) | No raise; config.age_col='age' | No |
-| TC002 | Config validate age_col type | {'age_col': 123} | ValidationError | Yes |
-| TC003 | Detect on sample df: flags for BMI BIV | Df with age, sex, weight, height | {'bmi': pd.Series(...)} with flags per mod_bmiz | No |
-| TC004 | Detect raises ValueError for missing age col | Df without 'age', config default | ValueError("Column 'age' does not exist") | Yes |
-| TC005 | Detect handles NaN in weight: flag False | Df with NaN weight, valid age/sex | False in series | Yes |
-| TC006 | Detect for multiple measures: WAZ and HAZ | Df with measures, columns=['weight_kg', 'height_cm'] | Dict with series for both columns | No |
-| TC007 | Invalid sex handling raises | Df sex='UNKNOWN', Call detect | ValueError from calculate_growth_metrics | Yes |
-| TC008 | Registry includes 'zscore' method | Check biv.methods.registry | 'zscore' key exists | No |
-| TC009 | Detect does not modify input df | Df before/after | df unchanged | No |
-| TC010 | Cutoffs apply: Mod WAZ < -5 or >8 flagged | Df with extreme WAZ | True for flagged rows | No |
-| TC011 | Age in months validation defaults to warning | Df age=[15], config default | UserWarning about potential years | Yes |
-| TC012 | Config validate sex_col as string | {'sex_col': 456} | ValidationError | Yes |
-| TC013 | Custom column mapping works | config={'age_col':'visit_age'} | Detect succeeds | No |
+| TC001 | Test default configuration values | ZScoreConfig() | age_col='age', sex_col='sex', head_circ_col=None, validate_age_units=True | No |
+| TC002 | Config validate age_col type | ZScoreConfig(age_col=123) | ValidationError | Yes |
+| TC003 | Config validate sex col as string | ZScoreConfig(sex_col=456) | ValidationError | Yes |
+| TC004 | Test custom configuration values | Custom config dict | Assert custom values set correctly | No |
+| TC005 | Test validation of invalid column names | age_col='' | ValidationError | Yes |
+| TC006 | Test validation of invalid head circumference column | head_circ_col='' | ValidationError | Yes |
+| TC007 | Instantiate ZScoreDetector with valid config | No args | No raise; isinstance(ZScoreDetector) | No |
+| TC008 | Detect raises ValueError for missing age col | Df without 'age' | ValueError("Column 'age' does not exist") | Yes |
+| TC009 | Invalid sex handling raises | Df sex='UNKNOWN' | ValueError | Yes |
+| TC010 | Registry includes 'zscore' method | Check biv.methods.registry | 'zscore' in registry | No |
+| TC011 | Detect does not modify input df | Df before/after detect | df unchanged | No |
+| TC012 | Cutoffs apply: Mod WAZ < -5 or >8 flagged | Df with extreme WAZ | True for flagged rows | No |
+| TC013 | Age in months validation defaults to warning | Df age=[15] | Warning logged about potential years | Yes |
 | TC014 | Unsupported column raises error | column='unsupported_metric' | ValueError | Yes |
-| TC015 | BIV flag extraction uses correct keys | column='weight_kg' | Uses '_bivwaz' from calculate_growth_metrics | No |
-| TC016 | Integration with actual measure arrays | Df with all supported columns | Proper flag extraction | No |
+| TC015 | BIV flag extraction uses correct keys | column='weight_kg' | Uses '_bivwaz' in results | No |
+| TC016 | Integration with actual measure arrays | Df with all supported columns | All flags returned correctly | No |
+| TC017 | Test detector initialization with default parameters | No args | Default config values | No |
+| TC018 | Test detection with custom column names | Custom age_col='visit_age' | Detect succeeds with custom mapping | No |
+| TC019 | Test basic detection on BMI column | Df with bmi, age, sex | Series with BIV flags | No |
+| TC020 | Test detection on weight_kg and height_cm columns | Df with weight_kg, height_cm | Dict with both series | No |
+| TC021 | Test detection fails when required column is missing | Df missing 'sex' | ValueError | Yes |
+| TC022 | Test detection fails with unsupported column name | unsupported_metric | ValueError | Yes |
+| TC023 | Test detector initialization with invalid configuration | age_col='' | ValueError | Yes |
+| TC024 | Test validation of conflicting column names | age_col='age', sex_col='age' | ValueError | Yes |
+| TC025 | Test detection handles NaN values properly | Df with NaN in bmi | False in flags | Yes |
+| TC026 | Test detection raises ValueError for invalid sex values | Df sex='UNKNOWN' | ValueError | Yes |
+| TC027 | Test age validation warning for potential unit issues | Df age=[12] | Warning logged | Yes |
+| TC028 | Test age validation warning is disabled when configured | Df age=[12], validate_age_units=False | No warning | No |
+| TC029 | Test warning for ages exceeding CDC reference limits | Df age=[250] | Warning logged | Yes |
+| TC030 | Test that detect() does not modify the original DataFrame | Df before/after | df unchanged | No |
+| TC031 | Test that returned Series have correct index alignment | Df with custom index | Series has same index | No |
+| TC032 | Test that all supported column-to-measure mappings work | Df with all columns | All mappings work | No |
+| TC033 | Test that zscore method is registered | Check registry | 'zscore' in registry | No |
+| TC034 | Test that registered detector can be instantiated | registry['zscore'] | isinstance(ZScoreDetector) | No
 
 ##### Phase 4: Integration with BIV API and Testing
 

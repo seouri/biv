@@ -330,22 +330,67 @@ def _compute_standard_zscores(
         mod_bmiz[age_na_mask] = np.nan
         result["mod_bmiz"] = mod_bmiz
 
+    # Modified weight z-score for BIV detection
+    if "mod_waz" in measures and weight is not None:
+        mod_waz = modified_zscore(weight, mock_M, mock_L, mock_S)
+        mod_waz[age_na_mask] = np.nan
+        result["mod_waz"] = mod_waz
+
+    # Modified height z-score for BIV detection
+    if "mod_haz" in measures and height is not None:
+        mod_haz = modified_zscore(height, mock_M, mock_L, mock_S)
+        mod_haz[age_na_mask] = np.nan
+        result["mod_haz"] = mod_haz
+
+    # Modified head circumference z-score for BIV detection
+    if "mod_headcz" in measures and head_circ is not None:
+        mod_headcz = modified_zscore(head_circ, mock_M, mock_L, mock_S)
+        mod_headcz[age_na_mask] = np.nan
+        result["mod_headcz"] = mod_headcz
+
     return result
 
 
 def _compute_biv_flags(
     measures: List[str], results: Dict[str, np.ndarray]
 ) -> Dict[str, np.ndarray]:
-    """Compute BIV flags from modified z-scores."""
+    """Compute BIV flags from modified z-scores per CDC thresholds."""
     flags = {}
 
-    # BIV flags derived from modified z-scores
-    # Currently only BMI BIV flag (_bivbmi) as per ZScoreDetector spec
+    # Weight-for-age BIV: mod_waz < -5 or >8
+    if "_bivwaz" in measures and "mod_waz" in results:
+        mod_waz = results["mod_waz"]
+        biv_waz_flag = (mod_waz < -5.0) | (mod_waz > 8.0)
+        biv_waz_flag = np.where(np.isnan(mod_waz), False, biv_waz_flag)
+        flags["_bivwaz"] = biv_waz_flag
+
+    # Height-for-age BIV: mod_haz < -5 or >4
+    if "_bivhaz" in measures and "mod_haz" in results:
+        mod_haz = results["mod_haz"]
+        biv_haz_flag = (mod_haz < -5.0) | (mod_haz > 4.0)
+        biv_haz_flag = np.where(np.isnan(mod_haz), False, biv_haz_flag)
+        flags["_bivhaz"] = biv_haz_flag
+
+    # BMI-for-age BIV: mod_bmiz < -4 or >8
     if "_bivbmi" in measures and "mod_bmiz" in results:
-        # BMI: mod_z < -4 or >8
-        biv_bmi_flag = (results["mod_bmiz"] < -4.0) | (results["mod_bmiz"] > 8.0)
-        biv_bmi_flag = np.where(np.isnan(results["mod_bmiz"]), False, biv_bmi_flag)
+        mod_bmiz = results["mod_bmiz"]
+        biv_bmi_flag = (mod_bmiz < -4.0) | (mod_bmiz > 8.0)
+        biv_bmi_flag = np.where(np.isnan(mod_bmiz), False, biv_bmi_flag)
         flags["_bivbmi"] = biv_bmi_flag
+
+    # Head circumference-for-age BIV: mod_headcz < -5 or >5
+    if "_bivheadcz" in measures and "mod_headcz" in results:
+        mod_headcz = results["mod_headcz"]
+        biv_headcz_flag = (mod_headcz < -5.0) | (mod_headcz > 5.0)
+        biv_headcz_flag = np.where(np.isnan(mod_headcz), False, biv_headcz_flag)
+        flags["_bivheadcz"] = biv_headcz_flag
+
+    # Weight-for-height BIV: mod_whz < -4 or >8 (for heights <121cm)
+    if "_bivwh" in measures and "mod_whz" in results:
+        mod_whz = results["mod_whz"]
+        biv_whz_flag = (mod_whz < -4.0) | (mod_whz > 8.0)
+        biv_whz_flag = np.where(np.isnan(mod_whz), False, biv_whz_flag)
+        flags["_bivwh"] = biv_whz_flag
 
     return flags
 
@@ -403,6 +448,7 @@ def calculate_growth_metrics(
     height: Optional[np.ndarray] = None,
     weight: Optional[np.ndarray] = None,
     head_circ: Optional[np.ndarray] = None,
+    bmi: Optional[np.ndarray] = None,
     measures: Optional[List[str]] = None,
 ) -> Dict[str, np.ndarray]:
     """

@@ -11,7 +11,7 @@ from .base import BaseDetector
 
 # Import detector modules to register subclasses
 from . import range
-# TODO: from . import zscore  # When implemented
+from .zscore import detector as zscore_detector
 
 
 def _build_registry() -> Dict[str, Type[BaseDetector]]:
@@ -27,4 +27,4 @@ def _build_registry() -> Dict[str, Type[BaseDetector]]:
 # Global registry instance
 registry = _build_registry()
 
-__all__ = ["registry", "range"]
+__all__ = ["registry", "range", "zscore"]
