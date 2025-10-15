@@ -1,10 +1,10 @@
 # Implementation Plan for `biv` Python Package
 
-This document outlines a modular, phased implementation plan for the `biv` Python package, designed to detect and remove Biologically Implausible Values (BIVs) in longitudinal weight and height measurements. The plan is tailored for coding agents like Cline, Gemini CLI, or Grok Code Fast, emphasizing Test-Driven Development (TDD) as detailed in the attached [`tdd_guide.md`](tdd_guide.md).
+This document outlines a modular, phased implementation plan for the `biv` Python package, designed to detect and remove Biologically Implausible Values (BIVs) in longitudinal weight and height measurements. The plan is tailored for coding agents like Cline, Gemini CLI, or Grok Code Fast, emphasizing Test-Driven Development (TDD) as detailed in [`docs/tdd_protocol.md`](docs/tdd_protocol.md).
 
 **Note**: This implementation plan should be read in conjunction with [`architecture.md`](architecture.md), which provides the detailed architecture overview, design principles, and high-level structure. The plan references the architectural components defined there.
 
-**TDD Instructions**: **Strictly follow the TDD protocol in `tdd_guide.md`** for all code changes, including the Red-Green-Refactor cycle, human confirmation checkpoints, and quality checks (e.g., `uv run pytest`, `uv run ruff check --fix .`, `uv run mypy .`). Before any code implementation, confirm requirements and test cases with a human, write failing tests, and only then implement minimally. After passing new tests, always run the full suite to ensure no regressions. Use the guide's version control workflow for commits after each TDD cycle.
+**TDD Instructions**: **Strictly follow the TDD protocol in `docs/tdd_protocol.md`** for all code changes, including the Red-Green-Refactor cycle, human confirmation checkpoints, and quality checks (e.g., `uv run pytest`, `uv run ruff check --fix .`, `uv run mypy .`). Before any code implementation, confirm requirements and test cases with a human, write failing tests, and only then implement minimally. After passing new tests, always run the full suite to ensure no regressions. Use the guide's version control workflow for commits after each TDD cycle.
 
 **Always start with the specific plan for the current phase**, based on this overall plan. Before starting any phase, **ask clarifying questions** if ambiguities arise (e.g., via user prompts in the agent interface). For example:
 - "Is the default z-score threshold 3.0, or should it be configurable?"
@@ -25,7 +25,7 @@ This document outlines a modular, phased implementation plan for the `biv` Pytho
   - All commits must be on the phase-specific branch.
 - Quality Checks and Validation:
   - After each task/phase, run `uv run pytest`, `uv run ruff check .` (lint), and `uv run ruff format .` (format).
-  - If issues arise, revert to TDD cycle per `tdd_guide.md`; use `uv run ruff check --fix` for quick fixes.
+  - If issues arise, revert to TDD cycle per `docs/tdd_protocol.md`; use `uv run ruff check --fix` for quick fixes.
   - Final Validation: Match conversation examples exactly; run full suite before declaring done.
 - Plan Updates and Confirmation:
   - **MANDATORY**: Immediately update `implementation_plan.md` file after **every single task** (Red-Green-Refactor cycle or phase completion) and obtain **human confirmation**.
@@ -40,7 +40,7 @@ The plan is phased for modularity: Start high-level, drill into details. Each ph
 
 
 
-**Tooling Note**: This plan uses `uv` (from Astral) for fast dependency resolution, installation, and virtual environment management. Initialize with `uv init` for the project, use `uv add` for dependencies, and `uv sync` for locking the environment. All `pip` commands are replaced with `uv` equivalents. Ruff is integrated for linting and formatting (replacing tools like flake8, black, and isort) to ensure code quality. Follow `tdd_guide.md` for full setup (e.g., pre-commit, mypy).
+**Tooling Note**: This plan uses `uv` (from Astral) for fast dependency resolution, installation, and virtual environment management. Initialize with `uv init` for the project, use `uv add` for dependencies, and `uv sync` for locking the environment. All `pip` commands are replaced with `uv` equivalents. Ruff is integrated for linting and formatting (replacing tools like flake8, black, and isort) to ensure code quality. Follow `docs/tdd_protocol.md` for full setup (e.g., pre-commit, mypy).
 
 ## Phase 1: Project Setup and Directory Structure
 

@@ -4,7 +4,7 @@ The core function `calculate_growth_metrics` will be implemented in `biv.zscores
 
 The integration aligns with `biv`'s modular architecture (as per [architecture.md](architecture.md)): `ZScoreDetector` inherits from `BaseDetector`, uses Pydantic for config validation, and registers automatically. It will compute growth-specific z-scores via `calculate_growth_metrics` and flag BIVs accordingly. This supports `biv.detect()` and `biv.remove()` APIs, where users can specify 'zscore' in `methods` with growth-related params.
 
-This plan embeds ZScoreDetector into `biv` (no standalone `cdc_growth` package), following TDD protocol (`tdd_guide.md`) and quality checks (uv, Ruff, mypy, pytest-cov >90%). Reused by other future detectors or for direct DataFrame z-score/percentile additions.
+This plan embeds ZScoreDetector into `biv` (no standalone `cdc_growth` package), following TDD protocol (`docs/tdd_protocol.md`) and quality checks (uv, Ruff, mypy, pytest-cov >90%). Reused by other future detectors or for direct DataFrame z-score/percentile additions.
 
 Follow `biv`'s git branching (e.g., phase-4-zscore), human confirmations, and plan updates in [implementation_plan.md](implementation_plan.md).
 
@@ -199,7 +199,7 @@ Refined based on comprehensive expert assessment to achieve perfection (score: 1
 **Immediate Actions** (Prioritized for 10/10 Execution):
 - **Prototype and Validate**: Implement core LMS helpers with empirical validations (e.g., SAS/R cross-checks). Add provenance and telemetry immediately.
 - **Benchmarking Expansion**: Run quantitative profiled benchmarks on 50M rows to quantify complexities; refine memoization/fallbacks based on results.
-- **TDD Cycles**: Enforce per-function cycles with enhanced property tests; include stress simulations from start, per [tdd_guide.md](tdd_guide.md).
+- **TDD Cycles**: Enforce per-function cycles with enhanced property tests; include stress simulations from start, per [docs/tdd_protocol.md](docs/tdd_protocol.md).
 - **Documentation Updates**: Supplement docstrings with derivations, precision bounds, and references post-implementation.
 
 **Continuous Improvements**:

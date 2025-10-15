@@ -35,7 +35,7 @@ Thank you for your interest in contributing to BIV! This guide will help you get
 
 ## Development Workflow
 
-We follow Test-Driven Development (TDD) practices. See [`tdd_guide.md`](tdd_guide.md) for details.
+We follow Test-Driven Development (TDD) practices. See [`docs/tdd_protocol.md`](docs/tdd_protocol.md) for details.
 
 - Write tests first (in `tests/` directory)
 - Implement code in `src/biv/`
