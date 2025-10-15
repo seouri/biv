@@ -23,7 +23,6 @@ Key integration points:
   - `bmi`: kg/m² (CDC only; omit for <24 months)
   - `headcir`: cm (up to 36 months)
 - **Testing**: Validates z-scores, percentiles, BIV flags (_bivbmi, _bivwt, _bivht, _bivhc), LMS/extended calculations. Covers 100% functional requirements.
-- **Expansion**: From 21 to 32 test cases to cover all critical BIV flag scenarios (WHZ, head circ extremes, multi-trigger BIV).
 
 ## WHO Test Values (<24 Months) - 7 Core Cases
 
@@ -277,8 +276,6 @@ These files were generated using the SAS programs described above and contain:
 - **Z-scores and percentiles**: `waz`, `wapct`, `haz`, `hapct`, `bmiz`, `bmipct`, `whz`, `whpct`, `headcz`, `headcpct`
 - **Modified z-scores**: `mod_waz`, `mod_haz`, `mod_bmiz`, `mod_whz`, `mod_headcz`
 - **BIV flags**: `_bivwt`, `_bivht`, `_bivbmi`, `_bivhc`, `_bivwh`
-- **Extended BMI metrics**: `original_bmiz`, `original_bmipct`, `bmip95`
-- **Additional variables**: `bmi50`, `bmi95`, `bmip50`, `bmip95`, `bmi120`
 
 ### Verification Against Expected Values
 
