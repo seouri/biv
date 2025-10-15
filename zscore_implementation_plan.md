@@ -2,11 +2,15 @@
 
 The core function `calculate_growth_metrics` will be implemented in `biv.zscores.py` (upper directory level for reusability), used by `ZScoreDetector` in `biv.methods.zscore.detector.py` and potentially other future detectors or for direct z-score addition to DataFrames.
 
-The integration aligns with `biv`'s modular architecture (as per `architecture.md`): `ZScoreDetector` inherits from `BaseDetector`, uses Pydantic for config validation, and registers automatically. It will compute growth-specific z-scores via `calculate_growth_metrics` and flag BIVs accordingly. This supports `biv.detect()` and `biv.remove()` APIs, where users can specify 'zscore' in `methods` with growth-related params.
+The integration aligns with `biv`'s modular architecture (as per [architecture.md](architecture.md)): `ZScoreDetector` inherits from `BaseDetector`, uses Pydantic for config validation, and registers automatically. It will compute growth-specific z-scores via `calculate_growth_metrics` and flag BIVs accordingly. This supports `biv.detect()` and `biv.remove()` APIs, where users can specify 'zscore' in `methods` with growth-related params.
 
 This plan embeds ZScoreDetector into `biv` (no standalone `cdc_growth` package), following TDD protocol (`tdd_guide.md`) and quality checks (uv, Ruff, mypy, pytest-cov >90%). Reused by other future detectors or for direct DataFrame z-score/percentile additions.
 
-Follow `biv`'s git branching (e.g., phase-4-zscore), human confirmations, and plan updates in `implementation_plan.md`.
+Follow `biv`'s git branching (e.g., phase-4-zscore), human confirmations, and plan updates in [implementation_plan.md](implementation_plan.md).
+
+## Z-Scores Testing Document Integration
+
+The following testing guidelines and comprehensive test cases are incorporated from `zscores_testing.md`, providing a complete validation framework with 32 core scenarios across WHO (<24 months) and CDC (≥24 months) growth charts. This ensures thorough validation against SAS/R outputs and functional requirements.
 
 #### 1. Data Acquisition and Preprocessing
 Retain original, but store .npz files in `biv/data/` (git-ignored; fetch via `biv.scripts.download_data.py`). Downside of keeping .npz in git: Bloat repository size (several MB), slow clones, versioning issues with changing external data, potential security risks without verification. Update as needed: Script checks for updates via timestamps/hashes, re-fetches if mismatched/outdated to ensure latest WHO/CDC sources.
@@ -18,7 +22,7 @@ Retain original, but store .npz files in `biv/data/` (git-ignored; fetch via `bi
 - **Security/Privacy Enhancements**: Fetch data over HTTPS with verified SSL/TLS connections (e.g., requests with verify=True for certificate validation); use retry logic (e.g., requests with backoff); include version hashes (SHA-256) in .npz metadata for provenance and integrity checks. If hash mismatches detected, log a warning and prevent loading to safeguard against compromised CDC/WHO sources—fallback to cached versions or manual verification if available. Script supports conditional updates only when sources change, with user notification for potential security risks.
 
 #### 2. Implementation Architecture
-Embed into `biv` structure (per `architecture.md`):
+Embed into `biv` structure (per [architecture.md](architecture.md)):
 
 ```
 biv/
@@ -149,7 +153,7 @@ Implement in `biv.zscores.py` (vectorized); import by `ZScoreDetector` in `biv.m
 - Progress Bar Support: Integrate with biv.detect()'s progress_bar param for large datasets; add logging or tqdm wrappers in calculate_growth_metrics if data loading/initialization is lengthy (e.g., for >1M rows, display progress during LMS interpolation or z-score computation). Function design adjustment: Add optional progress_bar: bool = False param to calculate_growth_metrics, conditionally wrapping key loops (e.g., interp phases) with tqdm if enabled, ensuring usability for long-running computations on large pediatric datasets.
 
 #### 5. Testing Plan
-Align with biv Phase 4; use tdd_guide.md (Red-Green-Refactor per atomic behavior).
+Align with biv Phase 4; use [tdd_guide.md](tdd_guide.md) (Red-Green-Refactor per atomic behavior).
 
 - **Correctness**:
   - Unit: Test utils (interp, lms_zscore, extended_bmiz, modified_zscore) with known CDC examples (e.g., boy 60mo BMI=17.9 ~0 z, 200-mo girl BMI=333 ~ mod_z=49.2).
@@ -165,7 +169,7 @@ Align with biv Phase 4; use tdd_guide.md (Red-Green-Refactor per atomic behavior
 
 - **Synthetic Multi-Method Pipelines in CI**: Integrate CI for end-to-end tests simulating multi-method pipelines (e.g., zscore + range via DetectorPipeline on synthetic NHANES-like data). Run daily/nightly builds with synthetic datasets (N=10K-1M) to validate cross-method flags, performance drifts, and integrated correctness. Track regression risks with threshold-based alerts (e.g., flag accuracy >99.5%).
 
-- **Overall**: CI via GitHub Actions (uv sync, pytest-cov, ruff, mypy). Human confirm per TDD cycle; update implementation_plan.md after each. Test security: Mismatched hashes warn/prevent load.
+- **Overall**: CI via GitHub Actions (uv sync, pytest-cov, ruff, mypy). Human confirm per TDD cycle; update [implementation_plan.md](implementation_plan.md) after each. Test security: Mismatched hashes warn/prevent load.
 
 #### 6. Recommendations and Next Steps
 Refined based on comprehensive expert assessment to achieve perfection (score: 10/10). Incorporated enhancements for scientific accuracy, performance quantification, extensibility, and robustness to eliminate gaps and elevate the plan to production-grade excellence. Updated with explicit CDC SAS macro cross-validation references, HTTP SSL/TLS specifications, and detailed empirical profiling benchmarks, achieving full alignment with senior engineering standards for scientific packages.
@@ -195,7 +199,7 @@ Refined based on comprehensive expert assessment to achieve perfection (score: 1
 **Immediate Actions** (Prioritized for 10/10 Execution):
 - **Prototype and Validate**: Implement core LMS helpers with empirical validations (e.g., SAS/R cross-checks). Add provenance and telemetry immediately.
 - **Benchmarking Expansion**: Run quantitative profiled benchmarks on 50M rows to quantify complexities; refine memoization/fallbacks based on results.
-- **TDD Cycles**: Enforce per-function cycles with enhanced property tests; include stress simulations from start, per tdd_guide.md.
+- **TDD Cycles**: Enforce per-function cycles with enhanced property tests; include stress simulations from start, per [tdd_guide.md](tdd_guide.md).
 - **Documentation Updates**: Supplement docstrings with derivations, precision bounds, and references post-implementation.
 
 **Continuous Improvements**:
@@ -408,21 +412,98 @@ This phased plan ensures incremental, testable development per TDD, with full in
 
 ##### Phase 3: ZScoreDetector Class Implementation
 
-**Objective**: Implement ZScoreDetector inheriting BaseDetector, with Pydantic config, auto-registry, and integration calls to calculate_growth_metrics. Returns BIV flags for specified columns ('weight_kg', 'height_cm').
+**Objective**: Implement ZScoreDetector inheriting BaseDetector, with Pydantic config, auto-registry, and integration calls to calculate_growth_metrics. Returns BIV flags for specified columns ('weight_kg', 'height_cm'). Supports column-to-measure mapping for proper BIV flag extraction and age unit validation.
 
 **Checklist**:
-- [ ] Create config model: ZScoreConfig(Pydantic) with age_col, sex_col, defaults 'age', 'sex', validated.
-- [ ] Implement ZScoreDetector in `biv.methods.zscore.detector.py`: Inherit BaseDetector, implement detect() calling calculate_growth_metrics, extract flags per cutoffs.
-- [ ] Handle column mapping: Map user columns to standard names (e.g., patient_id_col, but for zscore, age/sex required).
-- [ ] Auto-registry: Ensure __init__.py adds 'zscore' method via introspection (per Phase 3 range enhancements).
-- [ ] Edge handling: NaN support (flags False), validate df columns; modify if needed based on README (age in months, sex M/F).
-- [ ] TDD: Cycles for detector instantiation, config validation, detect() with sample df.
-- [ ] Refactor: Docstrings, type hints; quality checks pass.
-- [ ] Commit: After human confirm, push to phase branch.
+- [ ] Define ZScoreConfig BaseModel with age_col, sex_col, head_circ_col, validate_age_units fields
+- [ ] Specify column-to-measure mapping: weight_kg→WAZ, height_cm→HAZ, bmi→BMIz, head_circ_cm→HEADCZ
+- [ ] Implement _validate_age_units method: Warning for age values suggesting years (max < 130 months)
+- [ ] Implement ZScoreDetector in `biv.methods.zscore.detector.py`: Inherit BaseDetector, validate config and columns
+- [ ] Implement detect() method: Extract arrays, call calculate_growth_metrics, map columns to BIV flags (_bivwaz, _bivhaz, _bivbmi, _bivheadcz)
+- [ ] Add BIV flag extraction logic: Map measures to specific flags (WAZ→_bivwaz, HAZ→_bivhaz, etc.) with fallback to False if missing
+- [ ] Auto-registry: Update `biv.methods.zscore.__init__.py` with imports for introspection-based registration
+- [ ] Edge handling: NaN support (flags False), validate df columns, age/sex columns required per README
+- [ ] TDD cycles: Instantiate detector, validate config, detect() with sample df (follow [tdd_guide.md](tdd_guide.md) Red-Green-Refactor)
+- [ ] Refactor: Complete docstrings, type hints; ensure ruff check and mypy pass
+- [ ] Integration testing: Verify detector works with actual DataFrame columns and measures
+- [ ] Commit: After human confirm, push to phase branch with updated checklists checked
 
-**Dependencies**: Phase 2 (core functions ready).
+**Dependencies**: Phase 2 (core functions and data ready); requires calculate_growth_metrics fully implemented.
 
-**Test Case Table for ZScoreDetector**:
+**Implementation Details**:
+
+**ZScoreConfig BaseModel**:
+```python
+from typing import Optional
+from pydantic import BaseModel
+
+class ZScoreConfig(BaseModel):
+    age_col: str = 'age'
+    sex_col: str = 'sex'
+    head_circ_col: Optional[str] = None
+    validate_age_units: bool = True
+```
+
+**Column-to-Measure Mapping**:
+```python
+COLUMN_MEASURE_MAPPING = {
+    'weight_kg': 'waz',      # Weight-for-age z-scores → _bivwaz flags
+    'height_cm': 'haz',      # Height-for-age z-scores → _bivhaz flags
+    'bmi': 'bmiz',           # BMI-for-age z-scores → _bivbmi flags
+    'head_circ_cm': 'headcz' # Head circumference-for-age z-scores → _bivheadcz flags
+}
+
+MEASURE_BIV_FLAG_MAPPING = {
+    'waz': '_bivwaz',      # WAZ: z < -5 or z > 8
+    'haz': '_bivhaz',      # HAZ: z < -5 or z > 4
+    'bmiz': '_bivbmi',     # BMIz: z < -4 or z > 8
+    'headcz': '_bivheadcz' # HEADCZ: z < -5 or z > 5
+}
+```
+
+**detect() Method Implementation**:
+```python
+def detect(self, df: pd.DataFrame, columns: list[str]) -> Dict[str, pd.Series]:
+    # Validate required columns exist
+    self._validate_column(df, self.config.age_col)
+    self._validate_column(df, self.config.sex_col)
+    self._validate_age_units(df)
+
+    # Map column names to available measure arrays for calculate_growth_metrics
+    column_arrays = {}
+    for col in columns:
+        if col not in COLUMN_MEASURE_MAPPING:
+            raise ValueError(f"Unsupported column '{col}' for z-score detection. "
+                           f"Supported: {list(COLUMN_MEASURE_MAPPING.keys())}")
+        measure = COLUMN_MEASURE_MAPPING[col]
+        if col == 'weight_kg':
+            column_arrays['weight'] = df[col].fillna(np.nan).values
+        elif col == 'height_cm':
+            column_arrays['height'] = df[col].fillna(np.nan).values
+        elif col == 'bmi':
+            column_arrays['bmi'] = df[col].fillna(np.nan).values
+        elif col == 'head_circ_cm':
+            column_arrays['head_circ'] = df[col].fillna(np.nan).values
+
+    # Call calculate_growth_metrics with extracted arrays
+    metrics = calculate_growth_metrics(
+        agemos=df[self.config.age_col].values,
+        sex=df[self.config.sex_col].values,
+        **column_arrays
+    )
+
+    # Extract BIV flags for each requested column
+    results = {}
+    for col in columns:
+        measure = COLUMN_MEASURE_MAPPING[col]
+        biv_key = MEASURE_BIV_FLAG_MAPPING[measure]
+        biv_flags = metrics.get(biv_key, np.full(len(df), False, dtype=bool))
+        results[col] = pd.Series(biv_flags, index=df.index, name=col)
+
+    return results
+```
+
+**Test Case Table for ZScoreDetector** (Updated with additional edge cases):
 
 | Test Case ID | Description | Input | Expected Output | Edge Case? |
 |--------------|-------------|-------|-----------------|------------|
@@ -431,14 +512,17 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC003 | Detect on sample df: flags for BMI BIV | Df with age, sex, weight, height | {'bmi': pd.Series(...)} with flags per mod_bmiz | No |
 | TC004 | Detect raises ValueError for missing age col | Df without 'age', config default | ValueError("Column 'age' does not exist") | Yes |
 | TC005 | Detect handles NaN in weight: flag False | Df with NaN weight, valid age/sex | False in series | Yes |
-| TC006 | Detect for multiple measures: WAZ and HAZ | Df with measures, columns=['waz', 'haz'] | Dict with series per measure | No |
+| TC006 | Detect for multiple measures: WAZ and HAZ | Df with measures, columns=['weight_kg', 'height_cm'] | Dict with series for both columns | No |
 | TC007 | Invalid sex handling raises | Df sex='UNKNOWN', Call detect | ValueError from calculate_growth_metrics | Yes |
 | TC008 | Registry includes 'zscore' method | Check biv.methods.registry | 'zscore' key exists | No |
 | TC009 | Detect does not modify input df | Df before/after | df unchanged | No |
 | TC010 | Cutoffs apply: Mod WAZ < -5 or >8 flagged | Df with extreme WAZ | True for flagged rows | No |
-| TC011 | Age in months validation assumed | Df age=[12, 24], years? | Warn if units suspect (age>240) | Yes |
+| TC011 | Age in months validation defaults to warning | Df age=[15], config default | UserWarning about potential years | Yes |
 | TC012 | Config validate sex_col as string | {'sex_col': 456} | ValidationError | Yes |
-| TC013 | Integration combiner: Pipeline OR flags ZScore + RangeDetector | Df extreme in range only | Flagged where either detects true | No |
+| TC013 | Custom column mapping works | config={'age_col':'visit_age'} | Detect succeeds | No |
+| TC014 | Unsupported column raises error | column='unsupported_metric' | ValueError | Yes |
+| TC015 | BIV flag extraction uses correct keys | column='weight_kg' | Uses '_bivwaz' from calculate_growth_metrics | No |
+| TC016 | Integration with actual measure arrays | Df with all supported columns | Proper flag extraction | No |
 
 ##### Phase 4: Integration with BIV API and Testing
 
@@ -484,7 +568,7 @@ This phased plan ensures incremental, testable development per TDD, with full in
 - [ ] Telemetry: Add optional metrics in api.py (e.g., execution time, rows processed).
 - [ ] Docs: Update README with zscore examples (pediatric extended); ensure API docs cover config.
 - [ ] Final tests: CI-style runs (uv sync fails if not); stress tests on edge hardware.
-- [ ] Phase complete: Update implementation_plan.md Phase 4 as [x]; commit to main.
+- [ ] Phase complete: Update [implementation_plan.md](implementation_plan.md) Phase 4 as [x]; commit to main.
 - [ ] Post-launch: Monitor usage for refinements (e.g., common configs).
 
 **Dependencies**: Phase 4 complete.
