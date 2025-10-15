@@ -13,11 +13,35 @@ Follow `biv`'s git branching (e.g., phase-4-zscore), human confirmations, and pl
 The following testing guidelines and comprehensive test cases are incorporated from `zscores_testing.md`, providing a complete validation framework with 32 core scenarios across WHO (<24 months) and CDC (≥24 months) growth charts. This ensures thorough validation against SAS/R outputs and functional requirements.
 
 #### 1. Data Acquisition and Preprocessing
-Retain original, but store .npz files in `biv/data/` (git-ignored; fetch via `biv.scripts.download_data.py`). Downside of keeping .npz in git: Bloat repository size (several MB), slow clones, versioning issues with changing external data, potential security risks without verification. Update as needed: Script checks for updates via timestamps/hashes, re-fetches if mismatched/outdated to ensure latest WHO/CDC sources.
+**RECOMMENDATION: Integrate reference data directly into `src/biv/data/` package directory** following scientific Python best practices (analysis shows this provides better usability than external data files).
 
-- **CDC Data**: CDC 2000 Growth Charts covering **24.0 months and above**, from https://www.cdc.gov/growthcharts/cdc-data-files.htm; parse to .npz with keys like 'bmi_boy_L' (NumPy arrays).
+- **Architecture**: Store processed `growth_references.npz` (37KB compressed) in `src/biv/data/` as version-controlled package asset
+- **Build Process**: `scripts/download_data.py` creates the .npz file, then copy to `src/biv/data/` during release
+- **Loading**: Use `importlib.resources` for lazy loading via cached function at runtime
+
+  ```python
+  from importlib import resources
+  import functools
+  import numpy as np
+
+  @functools.cache  # Lazy loading with caching
+  def _load_reference_data() -> Dict[str, np.ndarray]:
+      """Load growth reference data from package resources."""
+      with resources.files('biv.data').joinpath('growth_references.npz').open('rb') as f:
+          return np.load(f)
+
+  # Usage in calculate_growth_metrics:
+  def calculate_growth_metrics(...):
+      ref_data = _load_reference_data()
+      # interpolate LMS values...
+  ```
+
+- **Benefits**: No download step required, works offline, guaranteed data availability, follows NumPy/SciPy patterns
+
+**Data Sources**:
+- **CDC Data**: CDC 2000 Growth Charts covering **24.0 months and above**, from https://www.cdc.gov/growthcharts/cdc-data-files.htm; parse to .npz with keys like 'bmi_male_L' (NumPy arrays).
 - **WHO Data**: WHO Child Growth Standards (2006) covering **birth to <24 months**, from https://www.cdc.gov/growthcharts/who-data-files.htm; similar .npz.
-- **Integration**: Load in `ZScoreDetector` init or lazily; cache with functools.lru_cache.
+- **Package Integration**: Load lazily via `@functools.cache` decorator; data loaded once per session when first needed.
 - **Validation**: Assert shapes/monotonicity; log warnings for age >241 months (set to NaN).
 - **Security/Privacy Enhancements**: Fetch data over HTTPS with verified SSL/TLS connections (e.g., requests with verify=True for certificate validation); use retry logic (e.g., requests with backoff); include version hashes (SHA-256) in .npz metadata for provenance and integrity checks. If hash mismatches detected, log a warning and prevent loading to safeguard against compromised CDC/WHO sources—fallback to cached versions or manual verification if available. Script supports conditional updates only when sources change, with user notification for potential security risks.
 
@@ -28,19 +52,17 @@ Embed into `biv` structure (per [architecture.md](architecture.md)):
 biv/
 ├── biv/
 │   ├── zscores.py           # calculate_growth_metrics, LMS funcs, interp helpers for reusability
+│   ├── data/                # Package-integrated reference data (.npz files)
+│   │   └── growth_references.npz  # Version-controlled 37KB compressed reference data
 │   ├── methods/
 │   │   └── zscore/
 │   │       ├── __init__.py
 │   │       ├── detector.py  # ZScoreDetector class
 │   │       └── utils.py     # Local utils for detector
 │   └── ...  # Other biv components
-├── tests/
-│   └── methods/
-│       └── test_zscore/
-│           └── test_detector.py  # Includes growth-specific tests
 ├── scripts/
-│   └── download_data.py  # Fetch CDC/WHO CSVs to .npz
-└── data/  # .npz files
+│   └── download_data.py     # Fetch CDC/WHO CSVs to build package data
+└── ...  # Other root components
 ```
 
 - **Dependencies**: Add to pyproject.toml: uv add scipy dask[dataframe,delayed] numba (optional); sync with uv sync.
@@ -221,6 +243,8 @@ This refined plan now addresses all assessment gaps, positioning ZScoreDetector 
 - **After**: 37,743 bytes (37 KB) - only essential columns
 - **Savings**: 67,662 bytes (**65.9% reduction**)
 
+**Data Download Script Tests**: Added comprehensive test suite with 84 test cases covering end-to-end download, parsing, validation, and error handling scenarios. Achieves >90% test coverage for scripts/download_data.py.
+
 **Performance Impact**:
 - Faster parsing: Minimal data extraction
 - Smaller memory footprint: 79% less raw data
@@ -355,7 +379,7 @@ This phased plan ensures incremental, testable development per TDD, with full in
 
 **Dependencies**: Phase 1 complete (core functions ready).
 
-**Test Case Table for Data Acquisition and Download** (Updated to reflect all 84 tests in test_download_data.py):
+**Test Case Table for Data Acquisition and Download** (Updated to reflect all tests in tests/scripts/test_download_data.py):
 
 | Test Case ID | Description | Input | Expected Output | Edge Case? | Function Tested |
 |--------------|-------------|-------|-----------------|-------------|-----------------|
@@ -442,6 +466,23 @@ This phased plan ensures incremental, testable development per TDD, with full in
 | TC082 | Validate no age column | missing age field | No raise | Yes | validate_array |
 | TC083 | Validate negative M | negative median | ValueError | Yes | validate_array |
 | TC084 | Validate monotonic decreasing ages | non-increasing ages | ValueError | Yes | validate_array |
+||||Integration Tests for Package Data Loading||||
+| TC085 | Load growth references .npz from package data | importlib.resources access | Arrays loaded lazily on first use | No | get_reference_data |
+| TC086 | Cache reference data function result | @functools.cache decorator behavior | Same arrays returned on multiple calls | No | get_reference_data |
+| TC087 | Verify all expected reference arrays present | .npz file contents | 16 arrays: waz_male, waz_female, haz_male, etc. | No | load_reference_arrays |
+| TC088 | Validate array shapes in loaded data | Structure validation | Each array has expected shape and dtype | No | validate_loaded_data |
+| TC089 | Handle missing data file gracefully | Damaged .npz file | Clear error message with fallback guidance | Yes | get_reference_data |
+| TC090 | Parse metadata from .npz file | URL, hash, timestamp arrays | Metadata accessible for provenance tracking | No | load_metadata |
+| TC091 | Concurrent access to shared data | Multiple threads/processes | Thread-safe lazy loading without corruption | No | cached_reference_data |
+| TC092 | Memory efficiency of loaded data | Memory usage check | Arrays share memory efficiently, <50MB total | No | memory_profiling |
+| TC093 | Data version compatibility check | Array format validation | Compatible with expected NumPy dtypes and shapes | No | compatibility_check |
+| TC094 | Fallback to bundled data on network failure | Network unavailable scenario | Pre-downloaded data loads successfully | Yes | offline_fallback |
+| TC095 | Detect data file corruption through hash check | Modified .npz file | Warning/error when hash doesn't match metadata | Yes | integrity_verification |
+| TC096 | Handle empty data arrays gracefully | Sparse reference data | Maintains shape consistency, proper NaN handling | Yes | handle_sparse_data |
+| TC097 | Performance profiling of data loading | Loading time measurement | First load <100ms, subsequent <1ms via cache | No | performance_benchmarks |
+| TC098 | Integration with calculate_growth_metrics | End-to-end calculation | Z-scores computed using loaded reference data | No | calculate_growth_metrics |
+| TC099 | Version compatibility across package releases | Data format evolution | Backward compatibility or migration path | Yes | version_compatibility |
+| TC100 | Package resource access in different environments | Virtualenv, conda, system installs | Reliable data loading across environments | No | cross_environment |
 
 ##### Phase 3: ZScoreDetector Class Implementation
 
