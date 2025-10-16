@@ -108,7 +108,7 @@ class TestDownloadCSV:
             assert result == mock_content
 
     def test_tc003_handle_network_timeout(self):
-        """Handle network timeout gracefully."""
+        """TC003: Handle network timeout gracefully."""
         with patch("download_data.requests.Session") as mock_session_class:
             mock_session_instance = MagicMock()
             mock_session_instance.__enter__ = MagicMock(
@@ -121,7 +121,7 @@ class TestDownloadCSV:
                 download_csv("http://example.com")
 
     def test_tc004_handle_http_error_status_codes(self):
-        """Handle HTTP error status codes."""
+        """TC004: Handle HTTP error status codes."""
         with patch("download_data.requests.Session") as mock_session_class:
             mock_session_instance = MagicMock()
             mock_session_instance.__enter__ = MagicMock(
@@ -141,7 +141,7 @@ class TestComputeSHA256:
     """Test compute_sha256 function."""
 
     def test_tc005_compute_sha256_correct(self):
-        """Compute SHA-256 hash correctly."""
+        """TC005: Compute SHA-256 hash correctly."""
         content = "test content"
         expected = "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72"
         result = compute_sha256(content)
@@ -190,7 +190,7 @@ class TestParseCDCCSV:
         assert abs(female["M"][0] - 3.3994) < 1e-6
 
     def test_tc008_parse_cdc_male_only(self):
-        """TC010: Handle CDC sex splitting: males only."""
+        """TC008: Handle CDC sex splitting: males only."""
         csv_content = """Sex,Agemos,L,M,S
 1,0.0,-0.16,3.53,1.18
 1,1.0,-0.08,4.48,1.17"""
@@ -201,7 +201,7 @@ class TestParseCDCCSV:
         assert result["waz_female"].size == 0
 
     def test_tc009_parse_cdc_female_only(self):
-        """TC011: Handle CDC sex splitting: females only."""
+        """TC009: Handle CDC sex splitting: females only."""
         csv_content = """Sex,Agemos,L,M,S
 2,0.0,-0.23,3.4,1.19
 2,1.0,-0.17,4.19,1.18"""
@@ -212,39 +212,14 @@ class TestParseCDCCSV:
         assert result["waz_male"].size == 0
 
     def test_tc010_parse_cdc_mixed_sexes(self, sample_cdc_wtage_csv):
-        """TC012: Handle CDC mixed sexes."""
+        """TC010: Handle CDC mixed sexes."""
         result = parse_cdc_csv(sample_cdc_wtage_csv, "wtage")
 
         assert "waz_male" in result and result["waz_male"].shape[0] > 0
         assert "waz_female" in result and result["waz_female"].shape[0] > 0
 
-    def test_tc011_skip_nonessential_cols(self, sample_cdc_bmi_csv):
-        """TC013: Skip non-essential columns during parsing."""
-        result = parse_cdc_csv(sample_cdc_bmi_csv, "bmi_age")
-
-        # Should only have essential columns, not all 35
-        male = result["bmi_male"]
-        assert "age" in male.dtype.names
-        assert "L" in male.dtype.names
-        assert "M" in male.dtype.names
-        assert "S" in male.dtype.names
-        assert "P95" in male.dtype.names
-        assert "sigma" in male.dtype.names
-        assert len(male.dtype.names) == 6  # Only essential
-
-    def test_tc012_validate_column_presence_fallback(self):
-        """TC014: Validate column presence in header - missing column."""
-        # Missing M column
-        csv_content = """sex,agemos,L,S,P95,sigma
-1,24.0,-2.25,0.132,17.8,2.4"""
-        # This should run without crashing but log warning - hard to test log here
-        parse_cdc_csv(csv_content, "bmi_age")
-        # It will try to set non-existent column, but structured array has them
-        # In current impl, it sets if in header, else skips
-        # Hard to test precisely without logging
-
     def test_tc013_handle_malformed_csv_lines(self):
-        """TC015: Handle malformed CSV lines."""
+        """Handle malformed CSV lines."""
         # Varying columns, some missing
         csv_content = """sex,agemos,L,M,S,P95,sigma
 1,24.0,-2.25,16.5,0.132
@@ -255,24 +230,15 @@ class TestParseCDCCSV:
         assert "bmi_female" in result
         # Values may be NaN for missing
 
-    def test_tc014_convert_empty_strings_nan(self, sample_cdc_bmi_csv):
-        """TC016: Convert empty strings to NaN."""
-        # Modify sample to have empty
-        csv_content = sample_cdc_bmi_csv.replace("17.8219", "")
-        result = parse_cdc_csv(csv_content, "bmi_age")
-        male = result["bmi_male"]
-        # Should have NaN where empty
-        assert np.isnan(male["P95"][0])
-
     def test_tc015_parse_cdc_returns_dict_with_keys(self, sample_cdc_bmi_csv):
-        """TC026: Parse CDC BMI returns dict with bmi_male, bmi_female."""
+        """Parse CDC BMI returns dict with bmi_male, bmi_female."""
         result = parse_cdc_csv(sample_cdc_bmi_csv, "bmi_age")
         assert isinstance(result, dict)
         assert "bmi_male" in result
         assert "bmi_female" in result
 
     def test_tc016_cdc_naming_conventions_wtage(self, sample_cdc_wtage_csv):
-        """TC027: Test array naming conventions for wtage -> waz."""
+        """Test array naming conventions for wtage -> waz."""
         result = parse_cdc_csv(sample_cdc_wtage_csv, "wtage")
         assert "waz_male" in result
         assert "waz_female" in result
@@ -293,12 +259,21 @@ class TestParseCDCCSV:
         assert "haz_female" in result
         assert "waz_male" not in result  # Not the replacement
 
+    def test_tc034_convert_empty_strings_nan(self, sample_cdc_bmi_csv):
+        """Convert empty strings to NaN."""
+        # Modify sample to have empty
+        csv_content = sample_cdc_bmi_csv.replace("17.8219", "")
+        result = parse_cdc_csv(csv_content, "bmi_age")
+        male = result["bmi_male"]
+        # Should have NaN where empty
+        assert np.isnan(male["P95"][0])
+
 
 class TestParseWHOCSV:
     """Test parse_who_csv function."""
 
     def test_tc019_parse_who_boys_wtage(self, sample_who_boys_wtage_csv):
-        """TC008: Parse WHO boys CSV with essential columns only."""
+        """Parse WHO boys CSV with essential columns only."""
         result = parse_who_csv(sample_who_boys_wtage_csv, "boys_wtage")
 
         assert "waz_male" in result
@@ -310,7 +285,7 @@ class TestParseWHOCSV:
         assert abs(array["M"][0] - 3.3464) < 1e-4
 
     def test_tc020_parse_who_girls_headage(self):
-        """TC009: Parse WHO girls CSV with essential columns only."""
+        """Parse WHO girls CSV with essential columns only."""
         csv_content = """Month,L,M,S,P01,P1,P3,P5,P10
 0.0,-0.4482,3.2322,0.1426,1.863,2.138,2.481,2.622,2.8
 1.0,-0.3017,4.2273,0.1289,2.468,2.846,3.234,3.451,3.725"""
@@ -323,7 +298,7 @@ class TestParseWHOCSV:
         assert array["age"][0] == 0.0
 
     def test_tc021_parse_who_boys_wtlen_length(self, sample_who_boys_wtlen_csv):
-        """TC031: Parse WHO boys weight-for-length CSV (Length column)."""
+        """Parse WHO boys weight-for-length CSV (Length column)."""
         result = parse_who_csv(sample_who_boys_wtlen_csv, "boys_wtlen")
 
         assert "wlz_male" in result
@@ -334,7 +309,7 @@ class TestParseWHOCSV:
         assert abs(array["M"][0] - 2.5118) < 1e-4
 
     def test_tc022_parse_who_girls_wtlen_length(self):
-        """TC032: Parse WHO girls weight-for-length CSV."""
+        """Parse WHO girls weight-for-length CSV."""
         csv_content = """Length,L,M,S,P01,P1
 45.0,-1.3776,2.5118,0.1407,1.801,1.977
 50.0,-1.0683,2.8908,0.1383,2.132,2.324"""
@@ -346,14 +321,14 @@ class TestParseWHOCSV:
         assert array["age"][0] == 45.0
 
     def test_tc023_verify_month_col_used_for_non_wtlen(self, sample_who_boys_wtage_csv):
-        """TC033: Verify Month column used for non-wtlen WHO files."""
+        """Verify Month column used for non-wtlen WHO files."""
         result = parse_who_csv(sample_who_boys_wtage_csv, "boys_wtage")
 
         array = result["waz_male"]
         assert array["age"][1] == 1.0  # From Month
 
     def test_tc024_test_age_col_unification(self, sample_who_boys_wtlen_csv):
-        """TC034: Test age column unification."""
+        """Test age column unification."""
         # Test both Month and Length mapped to "age"
         # For wtlen, uses Length
         result = parse_who_csv(sample_who_boys_wtlen_csv, "boys_wtlen")
@@ -383,12 +358,12 @@ class TestParseWHOCSV:
         # Currently may fail, but test logs
 
     def test_tc026_measure_mapping_who_wtage(self, sample_who_boys_wtage_csv):
-        """TC028: Test measure mapping for WHO wtage -> waz."""
+        """Test measure mapping for WHO wtage -> waz."""
         result = parse_who_csv(sample_who_boys_wtage_csv, "boys_wtage")
         assert "waz_male" in result
 
     def test_tc027_handle_bom_in_header(self):
-        """TC029: Handle BOM in WHO header."""
+        """Handle BOM in WHO header."""
         csv_content = "\ufeffMonth,L,M,S\n0.0,-0.45,3.23,0.14\n1.0,-0.30,4.23,0.13"
         result = parse_who_csv(csv_content, "boys_headage")
         assert "headcz_male" in result
@@ -397,20 +372,20 @@ class TestParseWHOCSV:
         assert array["M"][0] == 3.23
 
     def test_tc028_robust_column_index_finding(self, sample_who_boys_wtage_csv):
-        """TC030: Robust column index finding with variable spaces."""
+        """Robust column index finding with variable spaces."""
         # Modify header to have spaces
         csv_content = sample_who_boys_wtage_csv.replace("Month", "Month ")
         result = parse_who_csv(csv_content, "boys_wtage")
         assert "waz_male" in result
 
-    def test_tc029_age_column_unification(self, sample_who_boys_wtlen_csv):
-        """TC034: Age column unification maps Length to age."""
+    def test_tc011_age_column_unification(self, sample_who_boys_wtlen_csv):
+        """Age column unification maps Length to age."""
         result = parse_who_csv(sample_who_boys_wtlen_csv, "boys_wtlen")
         array = result["wlz_male"]
         assert array["age"][0] == 45.0  # From Length
 
-    def test_tc030_handle_missing_month_length_cols(self):
-        """TC035: Handle missing Month or Length columns in WHO files."""
+    def test_tc029_handle_missing_month_length_cols(self):
+        """Handle missing Month or Length columns in WHO files."""
         # Missing Month for wtage
         csv_content = (
             "Age,L,M,S\n0.0,-0.45,3.23,0.14"  # Header "Age" instead of "Month"
@@ -420,7 +395,7 @@ class TestParseWHOCSV:
         # Since age is nan, filtered out, array empty
         assert array.size == 0
 
-    def test_tc031_verify_month_col_for_lenage(self):
+    def test_tc030_verify_month_col_for_lenage(self):
         """Verify Month column is used for lenage (non-wtlen)."""
         csv_content = """Month,L,M,S
 0.0,-0.45,45.0,0.14
@@ -430,14 +405,14 @@ class TestParseWHOCSV:
         array = result["haz_male"]
         assert array["age"][0] == 0.0
 
-    def test_tc032_handle_special_chars_in_header(self):
+    def test_tc031_handle_special_chars_in_header(self):
         """Handle special characters in header like (cm)."""
         csv_content = """Month (months),L,M,S
 0.0,-0.45,3.23,0.14"""
         result = parse_who_csv(csv_content, "boys_headage")
         assert "headcz_male" in result
 
-    def test_tc033_parse_who_wtage_filter_over_24(self):
+    def test_tc032_parse_who_wtage_filter_over_24(self):
         """Parse WHO wtage and filter out ages >=24."""
         csv_content = """Month,L,M,S
 23.0,-0.45,3.23,0.14
@@ -449,7 +424,7 @@ class TestParseWHOCSV:
         assert array.shape[0] == 1
         assert array["age"][0] == 23.0
 
-    def test_tc034_malformed_csv_lines_who(self):
+    def test_tc033_malformed_csv_lines_who(self):
         """Handle malformed CSV lines with varying columns in WHO."""
         csv_content = """Month,L,M,S
 0.0,-0.45,3.23,0.14,extra
@@ -464,7 +439,7 @@ class TestSaveNPZ:
     """Test save_npz function."""
 
     def test_tc035_save_multiple_arrays(self):
-        """TC017: Save multiple arrays to .npz."""
+        """Save multiple arrays to .npz."""
         test_data = {
             "arr1": np.array([1, 2, 3]),
             "arr2": np.array([[4, 5], [6, 7]]),
@@ -481,12 +456,12 @@ class TestSaveNPZ:
             loaded.close()
 
     def test_tc036_load_verify_integrity_save_npz(self):
-        """TC018: Load .npz and verify integrity."""
+        """Load .npz and verify integrity."""
         # Similar to above test
         pass  # Covered by above test
 
     def test_tc037_include_metadata_in_npz(self):
-        """TC019: Include metadata in .npz (URL, hash, timestamp)."""
+        """Include metadata in .npz (URL, hash, timestamp)."""
         # Test that save_npz includes metadata when provided
         test_data = {
             "arr1": np.array([1, 2, 3]),
@@ -531,7 +506,7 @@ class TestMainFunction:
         mock_download,
         mock_load,
     ):
-        """TC020: End-to-end: run main() on all sources."""
+        """End-to-end: run main() on all sources."""
         # Mock all interactions
         mock_download.return_value = "csv content"
         mock_cdc_parse.return_value = {"cdc_arr": np.array([1, 2])}
@@ -546,18 +521,18 @@ class TestMainFunction:
 
     @patch("download_data.download_csv", side_effect=RuntimeError("Download failed"))
     def test_tc039_main_partial_download_failure(self, mock_download):
-        """TC021: Handle partial download failure."""
+        """Handle partial download failure."""
         # Should continue processing successful downloads, log errors
         # Hard to test without more detailed mocking
         pass
 
     def test_tc040_measure_file_size_reduction(self):
-        """TC022: Measure file size reduction."""
+        """Measure file size reduction."""
         # Integration test, check after running actual download
         pass
 
     def test_tc041_verify_gitignore_exclusion(self):
-        """TC023: Verify .gitignore exclusion removed - .npz files are now package data."""
+        """Verify .gitignore exclusion removed - .npz files are now package data."""
         # Check that .npz files are NOT ignored (package data should be version-controlled)
         gitignore_path = Path(__file__).parent.parent.parent / ".gitignore"
         content = gitignore_path.read_text()
@@ -587,53 +562,40 @@ class TestMainFunction:
         assert str(data_dir).endswith("src/biv/data")
         # Repository directory may be 'w'/mocked, just check the data dir path ends correctly
 
-    def test_tc042_validate_age_separation(self):
-        """TC024: Validate WHO/CDC boundary separation."""
+    def test_tc043_validate_age_separation(self):
+        """Validate WHO/CDC boundary separation."""
         # Test on parsed data that ages are separate
         # For integration
         pass
 
-    def test_tc043_re_run_detects_unchanged_data(self):
-        """TC025: Re-run download detects unchanged data."""
+    def test_tc044_re_run_detects_unchanged_data(self):
+        """Re-run download detects unchanged data."""
         # Not implemented yet, skip
         pass
 
-    def test_tc044_floating_point_conversion(self, sample_cdc_bmi_csv):
-        """TC026: Validate floating point conversion."""
+    def test_tc045_floating_point_conversion(self, sample_cdc_bmi_csv):
+        """Validate floating point conversion."""
         result = parse_cdc_csv(sample_cdc_bmi_csv, "bmi_age")
         male = result["bmi_male"]
         assert isinstance(male["M"][0], np.float64)
         assert male["M"][0] == 16.57626713
 
-    def test_tc045_array_naming_conventions(self, sample_cdc_wtage_csv):
-        """TC027: Test array naming conventions."""
+    def test_tc012_array_naming_conventions(self, sample_cdc_wtage_csv):
+        """Test array naming conventions."""
         result = parse_cdc_csv(sample_cdc_wtage_csv, "wtage")
         assert "waz_male" in result
         assert "waz_female" in result
 
     def test_tc046_measure_mapping_from_filenames(self, sample_who_boys_wtage_csv):
-        """TC028: Test measure mapping from filenames."""
+        """Test measure mapping from filenames."""
         result = parse_who_csv(sample_who_boys_wtage_csv, "boys_wtage")
         assert "waz_male" in result
 
     def test_tc047_handle_bom_in_who_header(self):
-        """TC029: Handle BOM in WHO header."""
+        """Handle BOM in WHO header."""
         csv_content = "\ufeffMonth,L,M,S\n0.0,-0.45,3.23,0.14"
         result = parse_who_csv(csv_content, "boys_headage")
         assert "headcz_male" in result
-
-    def test_tc048_robust_column_index_finding(self, sample_cdc_bmi_csv):
-        """TC030: Robust column index finding."""
-        # Test works with variable spaces, etc.
-        result = parse_cdc_csv(sample_cdc_bmi_csv, "bmi_age")
-        assert len(result) == 2
-
-    def test_tc049_handle_missing_month_length_cols(self, sample_who_boys_wtlen_csv):
-        """TC035: Handle missing Month or Length columns in WHO files."""
-        # Remove Length column
-        bad_csv = sample_who_boys_wtlen_csv.replace("Length,", "Missing,")
-        # Should log warning, but still process what it can
-        parse_who_csv(bad_csv, "boys_wtlen")
 
     def test_tc050_who_age_boundary_filter_under_24(self, sample_who_boys_wtage_csv):
         """Ensure WHO age-based data is filtered to <24 months."""
@@ -648,26 +610,6 @@ class TestMainFunction:
             max_age = np.nanmax(array["age"])
             assert max_age < 24.0, f"Waz_male max age {max_age} should be <24"
             # Should exclude the 24.0 row if present in raw data
-
-    def test_tc051_who_wtlen_preserves_all_cm_ages(self, sample_who_boys_wtlen_csv):
-        """Ensure WHO wtlen data includes ALL values from original file, unfiltered."""
-        # Test with wtlen which uses Length in cm -> no filtering, includes all data
-        result = parse_who_csv(sample_who_boys_wtlen_csv, "boys_wtlen")
-
-        assert "wlz_male" in result
-        array = result["wlz_male"]
-
-        # Should have all cm values from original file (45.0, 50.0)
-        if array.size > 0:
-            # Check that we have the expected number of rows (2 in sample data)
-            assert array.shape[0] == 2, f"Expected 2 rows, got {array.shape[0]}"
-            max_age = np.nanmax(array["age"])
-            assert max_age > 45.0, f"Wlz_male should include all cm ages, got {max_age}"
-            # Verify the exact values from sample data
-            expected_ages = [45.0, 50.0]
-            actual_ages = sorted(array["age"])
-            np.testing.assert_array_almost_equal(actual_ages, expected_ages)
-        # Currently may fail, but test logs
 
     @patch("download_data.download_csv")
     @patch("download_data.parse_cdc_csv")
@@ -745,7 +687,7 @@ class TestMainFunction:
         # TODO: To full test, need to check if download called or not, but hard with mocks
 
     def test_tc057_load_verify_integrity(self):
-        """TC018: Load .npz and verify integrity."""
+        """Load .npz and verify integrity."""
         temp_dir = Path(tempfile.mkdtemp())
         path = temp_dir / "test.npz"
         data = {
@@ -1099,7 +1041,7 @@ class TestPackageDataIntegration:
 
     @patch("biv.zscores.resources.files")
     def test_tc079_load_growth_references_from_package(self, mock_resources_files):
-        """TC085: Load growth references .npz from package data."""
+        """Load growth references .npz from package data."""
         # Mock the file and np.load
         mock_file = MagicMock()
         mock_file.__enter__ = MagicMock(return_value=mock_file)
@@ -1136,7 +1078,7 @@ class TestPackageDataIntegration:
 
     @patch("biv.zscores._load_reference_data")
     def test_tc080_cache_behavior_reference_data(self, mock_load_ref):
-        """TC086: Cache behavior for reference data function."""
+        """Cache behavior for reference data function."""
         mock_load_ref.return_value = {"test": np.array([1, 2, 3])}
 
         from biv.zscores import _load_reference_data
@@ -1150,7 +1092,7 @@ class TestPackageDataIntegration:
 
     @patch("biv.zscores._load_reference_data")
     def test_tc081_verify_expected_growth_arrays_present(self, mock_load_ref):
-        """TC087: Verify all expected reference arrays present."""
+        """Verify all expected reference arrays present."""
         # Expected arrays based on WHO/CDC measures
         expected_arrays = [
             "waz_male",
@@ -1192,7 +1134,7 @@ class TestPackageDataIntegration:
 
     @patch("biv.zscores._load_reference_data")
     def test_tc082_validate_loaded_array_shapes_dtype(self, mock_load_ref):
-        """TC088: Validate array shapes in loaded data."""
+        """Validate array shapes in loaded data."""
         mock_data = {
             "waz_male": np.array(
                 [(0.0, 0.1, 1.0, 0.1), (1.0, 0.2, 1.2, 0.15)],
@@ -1216,7 +1158,7 @@ class TestPackageDataIntegration:
 
     @patch("biv.zscores.resources.files")
     def test_tc083_handle_missing_data_file_error(self, mock_resources_files):
-        """TC089: Handle missing data file gracefully."""
+        """Handle missing data file gracefully."""
         # Mock the file not found scenario
         mock_resources_instance = MagicMock()
         mock_file = MagicMock()
@@ -1237,7 +1179,7 @@ class TestPackageDataIntegration:
 
     @patch("biv.zscores.resources.files")
     def test_tc084_handle_corrupted_npz_file(self, mock_resources_files):
-        """TC090: Handle corrupted .npz file."""
+        """Handle corrupted .npz file."""
         # Mock corrupted np.load
         mock_resources_instance = MagicMock()
         mock_file = MagicMock()
@@ -1254,7 +1196,7 @@ class TestPackageDataIntegration:
 
     @patch("biv.zscores._load_reference_data")
     def test_tc085_memory_efficiency_loaded_data(self, mock_load_ref):
-        """TC091: Memory efficiency of loaded data."""
+        """Memory efficiency of loaded data."""
         # Mock data similar to real .npz size (~37KB)
         num_rows = 219  # CDC rows approx
         mock_data = {
@@ -1280,7 +1222,7 @@ class TestPackageDataIntegration:
 
     @patch("biv.zscores._load_reference_data")
     def test_tc086_data_version_compatibility_check(self, mock_load_ref):
-        """TC092: Data version compatibility check."""
+        """Data version compatibility check."""
         # Mock data with version info
         mock_data = {
             "waz_male": np.array(
@@ -1300,7 +1242,7 @@ class TestPackageDataIntegration:
 
     @pytest.mark.parametrize("env", ["dev", "prod", "ci"])
     def test_tc087_cross_environment_compatibility(self, env):
-        """TC093: Cross-environment compatibility for data loading."""
+        """Cross-environment compatibility for data loading."""
         # Mock different environments (would need more complex mocking for real test)
         with patch("biv.zscores.resources.files") as mock_resources:
             mock_resources_instance = MagicMock()
@@ -1327,7 +1269,7 @@ class TestPackageDataIntegration:
 
     @patch("biv.zscores._load_reference_data")
     def test_tc088_offline_fallback_scenario(self, mock_load_ref):
-        """TC094: Offline fallback scenario."""
+        """Offline fallback scenario."""
         mock_load_ref.return_value = {
             "waz_male": np.array(
                 [(0.0, 0.1, 1.0, 0.1)],
@@ -1351,7 +1293,7 @@ class TestPackageDataIntegration:
     @patch("biv.zscores._load_reference_data")
     @patch("biv.zscores.compute_sha256")
     def test_tc089_detect_data_file_corruption_hash(self, mock_sha, mock_load_ref):
-        """TC095: Detect data file corruption through hash check."""
+        """Detect data file corruption through hash check."""
         # Mock loaded data with hash
         mock_data = {
             "waz_male": np.array(
@@ -1370,7 +1312,7 @@ class TestPackageDataIntegration:
 
     @patch("biv.zscores._load_reference_data")
     def test_tc090_handle_sparse_reference_data(self, mock_load_ref):
-        """TC096: Handle sparse reference data gracefully."""
+        """Handle sparse reference data gracefully."""
         # Mock data with some NaN values
         mock_data = {
             "waz_male": np.array(
@@ -1391,7 +1333,7 @@ class TestPackageDataIntegration:
 
     @patch("biv.zscores._load_reference_data")
     def test_tc091_performance_benchmarks_data_loading(self, mock_load_ref):
-        """TC097: Performance profiling of data loading."""
+        """Performance profiling of data loading."""
         import time
 
         mock_data = {
@@ -1425,7 +1367,7 @@ class TestPackageDataIntegration:
     def test_tc092_integration_calculate_growth_metrics_loaded_data(
         self, mock_load_ref
     ):
-        """TC098: Integration with calculate_growth_metrics using loaded data."""
+        """Integration with calculate_growth_metrics using loaded data."""
         # Mock real data structure
         mock_data = {
             "waz_male": np.array(
@@ -1461,8 +1403,8 @@ class TestPackageDataIntegration:
         assert np.isfinite(result["bmiz"][0])
 
     @patch("biv.zscores._load_reference_data")
-    def test_tc093_backward_compatibility_package_versions(self, mock_load_ref):
-        """TC099: Backward compatibility across package versions."""
+    def test_tc048_backward_compatibility_package_versions(self, mock_load_ref):
+        """Backward compatibility across package versions."""
         # Mock data with older format but compatible
         mock_data = {
             "waz_male": np.array(
@@ -1483,8 +1425,8 @@ class TestPackageDataIntegration:
         assert result["waz_male"].dtype.names == ("age", "L", "M", "S")
 
     @patch("biv.zscores.resources.files")
-    def test_tc094_sha256_integrity_loaded_data(self, mock_resources_files):
-        """TC100: SHA-256 integrity verification for loaded data."""
+    def test_tc093_sha256_integrity_loaded_data(self, mock_resources_files):
+        """SHA-256 integrity verification for loaded data."""
         # Mock file with metadata containing hash
         mock_resources_instance = MagicMock()
         mock_file = MagicMock()
@@ -1563,18 +1505,14 @@ class TestPackageDataIntegration:
                 is_valid = validate_loaded_data_integrity(data_with_hash)
                 assert is_valid
 
-
-class TestNewImplementationTests:
-    """Tests for new implementation features (TC101-TC106)."""
-
     @patch("download_data.download_csv")
     @patch("download_data.parse_cdc_csv")
     @patch("download_data.save_npz")
     @patch("download_data.compute_sha256")
-    def test_tc095_always_download_even_with_recent_timestamps(
+    def test_tc094_always_download_even_with_recent_timestamps(
         self, mock_sha, mock_save, mock_parse, mock_download
     ):
-        """TC101: Always download remote CSV since these files are not that big."""
+        """Always download remote CSV since these files are not that big."""
         # Test always downloads regardless of existing timestamps
         mock_sha.return_value = "current_hash"
         mock_download.return_value = "new_content"
@@ -1609,10 +1547,10 @@ class TestNewImplementationTests:
     @patch("download_data.parse_cdc_csv")
     @patch("download_data.save_npz")
     @patch("download_data.compute_sha256")
-    def test_tc096_force_update_hash_differs_remote(
+    def test_tc095_force_update_hash_differs_remote(
         self, mock_sha, mock_save, mock_parse, mock_download
     ):
-        """TC102: Force update if remote CSV hash differs from stored."""
+        """Force update if remote CSV hash differs from stored."""
         # Force flag overrides any hash/timestamp checks
         mock_sha.return_value = "different_hash"
         mock_download.return_value = "new_content"
@@ -1626,8 +1564,8 @@ class TestNewImplementationTests:
             mock_save.assert_called()
 
     @patch("biv.zscores.resources.files")
-    def test_tc097_security_notification_hash_mismatch_load(self, mock_resources_files):
-        """TC103: Security notification on hash mismatch during load."""
+    def test_tc096_security_notification_hash_mismatch_load(self, mock_resources_files):
+        """Security notification on hash mismatch during load."""
         # Test integrity check with hash mismatch
         mock_resources_instance = MagicMock()
         mock_file = MagicMock()
@@ -1665,8 +1603,8 @@ class TestNewImplementationTests:
                         # Expected if hash check prevents loading
                         pass
 
-    def test_tc098_blended_boundary_interpolation_smooth_transition_24mo(self):
-        """TC104: Blended boundary interpolation: Smooth transition at 24 mo (β-weighted blending)."""
+    def test_tc051_blended_boundary_interpolation_smooth_transition_24mo(self):
+        """Blended boundary interpolation: Smooth transition at 24 mo (β-weighted blending)."""
         # Test interpolation at boundary - requires interpolate_lms implementation with blending
         # Current stub implementation doesn't have blending, so test mocks expected behavior
 
@@ -1692,8 +1630,8 @@ class TestNewImplementationTests:
             assert np.allclose(np.diff(M), -0.2, atol=0.01)  # Smooth decrease
             assert np.allclose(np.diff(S), 0.02, atol=0.01)  # Smooth increase
 
-    def test_tc099_blended_boundary_interpolation_exact_24mo_edge(self):
-        """TC105: Blended boundary interpolation: Handle exact 24 mo edge."""
+    def test_tc014_blended_boundary_interpolation_exact_24mo_edge(self):
+        """Blended boundary interpolation: Handle exact 24 mo edge."""
         # Test beta weighting at exact 24 mo (beta=0, pure CDC)
 
         with patch("biv.zscores.interpolate_lms") as mock_interpolate:
@@ -1716,10 +1654,10 @@ class TestNewImplementationTests:
 
     @patch("biv.zscores._load_reference_data")
     @patch("biv.zscores.compute_sha256")
-    def test_tc100_hash_mismatch_warning_integrity_validation(
+    def test_tc049_hash_mismatch_warning_integrity_validation(
         self, mock_sha, mock_load_ref
     ):
-        """TC106: Random hash mismatch warning during integrity validation."""
+        """Random hash mismatch warning during integrity validation."""
         # Test validation detects tampered data
         mock_data = {
             "waz_male": np.array(

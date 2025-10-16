@@ -403,111 +403,108 @@ This phased plan ensures incremental, testable development per TDD, with full in
 
 **Dependencies**: Phase 1 complete (core functions ready).
 
-**Test Case Table for Data Acquisition and Download** (Updated to reflect all 100 tests in tests/scripts/test_download_data.py):
+
+
+**Test Case Table for Data Acquisition and Download**:
 
 | Test Case ID | Description | Input | Expected Output | Edge Case? | Function Tested |
-|--------------|-------------|-------|-----------------|-------------|-----------------|
-| TC001 | Download valid CDC URL successfully | https://www.cdc.gov/growthcharts/data/zscore/wtage.csv | CSV content string | No | download_csv |
-| TC002 | Download valid WHO URL successfully | https://ftp.cdc.gov/pub/Health_Statistics/NCHS/growthcharts/WHO-Boys-Weight-for-age-Percentiles.csv | CSV content string | No | download_csv |
-| TC003 | Handle network timeout gracefully | Malformed URL causing timeout | Raises requests.Timeout | Yes | download_csv |
-| TC004 | Handle HTTP error status codes | Invalid URL returning 404 | Raises requests.HTTPError | Yes | download_csv |
-| TC005 | Compute SHA-256 hash correctly | Sample CSV content | 64-character hex string matching openssl output | No | compute_sha256 |
-| TC006 | Parse CDC BMI CSV with essential columns only | bmi-age-2022.csv content | Structured arrays with L,M,S,P95,sigma,agemos | No | parse_cdc_csv |
-| TC007 | Parse CDC wtage CSV with essential columns only | wtage.csv content | Structured arrays with L,M,S,Agemos | No | parse_cdc_csv |
-| TC008 | Parse WHO boys weight-for-age CSV with essential columns only | WHO-Boys-Weight-for-age-Percentiles.csv content | Structured array with age,L,M,S unified from "Month" | No | parse_who_csv |
-| TC009 | Parse WHO girls head-circumference-for-age CSV with essential columns only | WHO-Girls-Head-Circumference-for-age-Percentiles.csv content | Structured array with age,L,M,S from "Month" | No | parse_who_csv |
-| TC010 | Handle CDC sex splitting: males only | CDC CSV with Sex=1 rows only | Only _male arrays created | No | parse_cdc_csv |
-| TC011 | Handle CDC sex splitting: females only | CDC CSV with Sex=2 rows only | Only _female arrays created | No | parse_cdc_csv |
-| TC012 | Handle CDC mixed sexes | CDC CSV with both Sex=1 and 2 | Both _male and _female arrays | No | parse_cdc_csv |
-| TC013 | Skip non-essential columns during parsing | CDC CSV with 35 columns | Only 6/4 essential columns kept | No | parse_cdc_csv/parse_who_csv |
-| TC014 | Validate column presence in header - missing column | CSV missing essential column | Logs warning, uses fallback | Yes | parse_cdc_csv/parse_who_csv |
-| TC015 | Handle malformed CSV lines | CSV with varying column counts | Skips malformed rows with logging | Yes | parse_cdc_csv/parse_who_csv |
-| TC016 | Convert empty strings to NaN | CSV with empty fields | NaN values in arrays | No | parse_cdc_csv/parse_who_csv |
-| TC017 | Save multiple arrays to .npz | Dict of 16 structured arrays | Single .npz file created | No | save_npz |
-| TC018 | Load .npz and verify integrity | Saved .npz file | All arrays loadable with correct shapes | No | save_npz verification |
-| TC019 | Include metadata in .npz (URL, hash, timestamp) | Download result | .npz contains metadata_url, metadata_hash, etc. | No | main |
-| TC020 | End-to-end: run main() on all sources | All DATA_SOURCES URLs | growth_references.npz with 16 arrays and metadata | No | main |
-| TC021 | Handle partial download failure | One URL fails, others succeed | .npz created with successful sources, logs errors | Yes | main |
-| TC022 | Measure file size reduction | All CSVs processed | Total .npz < 40KB vs raw CSVs >100KB | No | main |
-| TC023 | Verify .gitignore exclusion | .npz in data/ directory | File not staged in git status | No | .gitignore |
-| TC024 | Validate WHO/CDC boundary separation | Ages in parsed arrays | WHO: 0-24 months, CDC: 24+ months | No | main |
-| TC025 | Re-run download detects unchanged data | Existing .npz with same hash | Skips download (not implemented yet) | No | main |
-| TC026 | Validate floating point conversion | CSV with string numbers | np.float64 arrays with correct values | No | parse_cdc_csv/parse_who_csv |
-| TC027 | Test array naming conventions | CDC wtage input | Arrays named f"{measure}_{sex}" | No | parse_cdc_csv |
-| TC028 | Test measure mapping from filenames | WHO wtage input | waz measure in output | No | parse_who_csv |
-| TC029 | Handle BOM in WHO header | CSV with \ufeff prefix | Cleaned headers for column lookup | Yes | parse_who_csv |
-| TC030 | Robust column index finding | Variable spaces in header | Correct column positions found | Yes | parse_cdc_csv/parse_who_csv |
-| TC031 | Parse WHO boys weight-for-length CSV (Length column) | WHO-Boys-Weight-for-length-Percentiles.csv content | Structured array with age,L,M,S unified from "Length" | No | parse_who_csv |
-| TC032 | Parse WHO girls weight-for-length CSV (Length column) | WHO-Girls-Weight-for-length-Percentiles.csv content | Structured array with age,L,M,S unified from "Length" | No | parse_who_csv |
-| TC033 | Verify Month column used for non-wtlen WHO files | WHO-Boys-Weight-for-age-Percentiles.csv content | age field populated from "Month" column | No | parse_who_csv |
-| TC034 | Test age column unification | WHO wtlen csv | age field populated from "Length" column | No | parse_who_csv |
-| TC035 | Handle missing Month or Length columns in WHO files | WHO content missing age column | Logs warning, continues with available data | Yes | parse_who_csv |
-| TC036 | Ensure WHO age-based data filtered to <24 months | WHO wtage csv content | Only ages <24 in waz_male array | No | parse_who_csv |
-| TC037 | Ensure WHO wtlen data includes ALL values from original file, unfiltered | WHO wtlen csv content | All height/length rows in wlz_male array | No | parse_who_csv |
-| TC038 | Validate raises for non-finite age values | age array with inf | ValueError | Yes | validate_array |
-| TC039 | Validate handles missing age column gracefully | array without age col | No raise | Yes | validate_array |
-| TC040 | Validate allows negative L values | negative L in array | No raise (allowed) | No | validate_array |
-| TC041 | Validate raises for negative S values in WHO data | negative S in who array | ValueError | Yes | validate_array |
-| TC042 | Validate raises for non-monotonic ages | age not increasing | ValueError | Yes | validate_array |
-| TC043 | Validate raises for negative P95 in CDC data | negative P95 in cdc array | ValueError | Yes | validate_array |
-| TC044 | Validate raises for non-finite L in CDC | inf L in cdc array | ValueError | Yes | validate_array |
-| TC045 | Validate logs warning for empty array | empty array passed | Warning logged | Yes | validate_array |
-| TC046 | Validate passes for valid array | valid array inputs | No raise | No | validate_array |
-| TC047 | Handle special characters in header like (cm) | header with (cm) | Skips invalid rows | Yes | parse_who_csv |
-| TC048 | Parse WHO wtage and filter out ages >=24 | wtage with age>24 | Only <24 in array | No | parse_who_csv |
-| TC049 | Handle malformed CSV lines with varying columns | csv with missing cols | Continue with NaN | Yes | parse_who_csv |
-| TC050 | Main with source_filter='cdc' only downloads CDC sources | source_filter='cdc', force | Only CDC downloads called | No | main |
-| TC051 | Main with force=True reloads all sources | force=True | All downloads called | No | main |
-| TC052 | Main strict_mode=True raises on error | strict=True, failure | Raises RuntimeError | Yes | main |
-| TC053 | Main without strict mode continues on error | strict=False, failure | Continues, logs error | Yes | main |
-| TC054 | Main skips download if timestamp recent | existing .npz recent | Skip download | No | main |
-| TC055 | Test parse CDC statage naming -> haz_male/haz_female | statage.csv content | Arrays named haz_male, haz_female | No | parse_cdc_csv |
-| TC056 | Parse CDC statage with missing Sex column raises | statage.csv missing Sex | ValueError on missing header key | Yes | parse_cdc_csv |
-| TC057 | Parse WHO logs warning for missing essential columns | WHO CSV missing L/M/S | Warning logged for each missing column | Yes | parse_who_csv |
-| TC058 | Main calls pbar set_postfix and update | Force download call | set_postfix, update called on tqdm | No | main |
-| TC059 | Parse CDC returns dict with keys | CDC BMI csv | Dict with bmi_male, bmi_female | No | parse_cdc_csv |
-| TC060 | Download retry on transient errors | HTTP connection issues | Retry logic applied | Yes | download_csv |
-| TC061 | Download fails after max retries exceeded | Persistent connection failure | Exception raised | Yes | download_csv |
-| TC062 | Download with custom timeout | timeout=60 | Uses 60s timeout | No | download_csv |
-| TC063 | Skip download when hash matches | existing .npz with matching stored hash | Download skipped | No | main |
-| TC064 | Force download ignores hash | force=True with matching hash | Download forced | No | main |
-| TC065 | Parse WHO with extra spaces in header (not supported) | header with trailing spaces | Empty result due to column mismatches | Yes | parse_who_csv |
-| TC066 | Parse CDC with tab separators (not supported) | tab-delimited CSV | ValueError on Sex column not found | Yes | parse_cdc_csv |
-| TC067 | Parse WHO empty header column | header with empty column names | Handles gracefully | Yes | parse_who_csv |
-| TC068 | Parse CDC exponential notation | floats in scientific notation | Parsed correctly | No | parse_cdc_csv |
-| TC069 | Parse WHO quoted values (not supported) | quoted CSV values | Empty result due to column mismatches | Yes | parse_who_csv |
-| TC070 | Parse CDC Windows line endings (CRLF) | CSV with \r\n | Parsed correctly | No | parse_cdc_csv |
-| TC071 | Parse WHO minimum viable CSV | CSV with only Month,L,M,S | Parsed successfully | No | parse_who_csv |
-| TC072 | Metadata timestamp format | timestamp data | Formatted correctly | No | save_npz |
-| TC073 | Metadata hash storage | hash string | Stored as fixed length | No | save_npz |
-| TC074 | Main updates metadata on skip | skip due to timestamp | Metadata updated | No | main |
-| TC075 | Validate array all NaN handling | array with all NaN | No crash, warnings logged | No | validate_array |
-| TC076 | Parse large CSV performance | 100-row CSV | Completes in <1s | No | parse_who_csv |
-| TC077 | Memory efficiency - no unnecessary copies | standard CSV parsing | Arrays not copied | No | parse_who_csv |
-| TC078 | Main with empty source filter | source_filter='' | Downloads all sources | No | main |
-| TC079 | Parse CDC invalid sex values filtered | sex values not 1 or 2 | Invalid sexes ignored | Yes | parse_cdc_csv |
-| TC080 | Validate array extreme valid values | large finite floats | Validation passes | No | validate_array |
-| TC081 | Validate non-finite age | inf in age | ValueError | Yes | validate_array |
-| TC082 | Validate no age column | missing age field | No raise | Yes | validate_array |
-| TC083 | Validate negative M | negative median | ValueError | Yes | validate_array |
-| TC084 | Validate monotonic decreasing ages | non-increasing ages | ValueError | Yes | validate_array |
-||||Integration Tests for Package Data Loading||||
-| TC085 | Load growth references .npz from package data | importlib.resources access | Arrays loaded lazily on first use | No | get_reference_data |
-| TC086 | Cache behavior for reference data function | @functools.cache decorator behavior | Same arrays returned on multiple calls | No | get_reference_data |
-| TC087 | Verify all expected reference arrays present | .npz file contents | 16 arrays: waz_male, waz_female, haz_male, etc. | No | load_reference_arrays |
-| TC088 | Validate array shapes in loaded data | Structure validation | Each array has expected shape and dtype | No | validate_loaded_data |
-| TC089 | Handle missing data file gracefully | Damaged .npz file | Clear error message with fallback guidance | Yes | get_reference_data |
-| TC090 | Parse metadata from .npz file | URL, hash, timestamp arrays | Metadata accessible for provenance tracking | No | load_metadata |
-| TC091 | Concurrent access to shared data | Multiple threads/processes | Thread-safe lazy loading without corruption | No | cached_reference_data |
-| TC092 | Memory efficiency of loaded data | Memory usage check | Arrays share memory efficiently, <50MB total | No | memory_profiling |
-| TC093 | Data version compatibility check | Array format validation | Compatible with expected NumPy dtypes and shapes | No | compatibility_check |
-| TC094 | Fallback to bundled data on network failure | Network unavailable scenario | Pre-downloaded data loads successfully | Yes | offline_fallback |
-| TC095 | Detect data file corruption through hash check | Modified .npz file | Warning/error when hash doesn't match metadata | Yes | integrity_verification |
-| TC096 | Handle sparse reference data gracefully | Sparse reference data | Maintains shape consistency, proper NaN handling | Yes | handle_sparse_data |
-| TC097 | Performance profiling of data loading | Loading time measurement | First load <100ms, subsequent <1ms via cache | No | performance_benchmarks |
-| TC098 | Integration with calculate_growth_metrics | End-to-end calculation | Z-scores computed using loaded reference data | No | calculate_growth_metrics |
-| TC099 | Backward compatibility across package versions | Data format evolution | Backward compatibility or migration path | Yes | version_compatibility |
-| TC100 | Package resource access in different environments | Virtualenv, conda, system installs | Reliable data loading across environments | No | cross_environment |
+|--------------|-------------|-------|-----------------|------------|-----------------|
+| TC001 | Download valid CDC URL successfully | https://example.com/csv | Content string | No | download_csv |
+| TC002 | Download valid WHO URL successfully | https://ftp.cdc.gov/pub/example.csv | Content string | No | download_csv |
+| TC003 | Handle network timeout gracefully | http://example.com | Exception | Yes | download_csv |
+| TC004 | Handle HTTP error status codes | http://example.com | Exception | Yes | download_csv |
+| TC005 | Compute SHA-256 hash correctly | "test content" | Correct hash | No | compute_sha256 |
+| TC006 | Parse CDC BMI CSV with essential columns only | sample_cdc_bmi_csv | bmi_male, bmi_female arrays | No | parse_cdc_csv |
+| TC007 | Parse CDC wtage CSV with essential columns only | sample_cdc_wtage_csv | waz_male, waz_female arrays | No | parse_cdc_csv |
+| TC008 | Handle CDC sex splitting: males only | CSV with Sex=1 only | waz_male array only | No | parse_cdc_csv |
+| TC009 | Handle CDC sex splitting: females only | CSV with Sex=2 only | waz_female array only | No | parse_cdc_csv |
+| TC010 | Handle CDC mixed sexes | sample_cdc_wtage_csv | Both male/female arrays | No | parse_cdc_csv |
+| TC011 | Age column unification maps Length to age | sample_who_boys_wtlen_csv | wlz_male.age = 45.0 | No | parse_who_csv |
+| TC012 | Test array naming conventions | sample_cdc_wtage_csv | waz_male, waz_female | No | parse_cdc_csv |
+| TC013 | Handle malformed CSV lines | CSV with missing columns | Parse valid parts | Yes | parse_cdc_csv |
+| TC014 | Blended boundary interpolation: Handle exact 24 mo edge | agemos=[24.0], sex=['F'] | Pure CDC values | No | interpolate_lms |
+| TC015 | Parse CDC BMI returns dict with bmi_male, bmi_female | sample_cdc_bmi_csv | Dict with bmi_male, bmi_female | No | parse_cdc_csv |
+| TC016 | Cdc naming conventions wtage -> waz | sample_cdc_wtage_csv | waz_male, waz_female | No | parse_cdc_csv |
+| TC017 | Validate allows negative L (due to code) | Array with L=-2.0 | No raise | No | validate_array |
+| TC018 | Parse CDC statage naming -> haz_male/haz_female | CSV with statage filename | haz_male, haz_female | No | parse_cdc_csv |
+| TC019 | Parse WHO boys wtage | sample_who_boys_wtage_csv | waz_male array | No | parse_who_csv |
+| TC020 | Parse WHO girls headage | CSV headage content | headcz_female array | No | parse_who_csv |
+| TC021 | Parse WHO boys weight-for-length CSV (Length column) | sample_who_boys_wtlen_csv | wlz_male array | No | parse_who_csv |
+| TC022 | Parse WHO girls wtlen length | CSV wtlen content | wlz_female array | No | parse_who_csv |
+| TC023 | Verify Month column used for non-wtlen WHO files | sample_who_boys_wtage_csv | age=[0.0, 1.0, 2.0] | No | parse_who_csv |
+| TC024 | Test age column unification | sample_who_boys_wtlen_csv | wlz_male.age = 45.0, 50.0 | No | parse_who_csv |
+| TC025 | Who wtlen preserves all cm ages (unfiltered) | sample_who_boys_wtlen_csv | All cm heights included | Yes | parse_who_csv |
+| TC026 | Measure mapping WHO wtage -> waz | sample_who_boys_wtage_csv | waz_male array | No | parse_who_csv |
+| TC027 | Handle BOM in WHO header | BOM + CSV content | headcz_male array | Yes | parse_who_csv |
+| TC028 | Robust column index finding with variable spaces | Header with spaces | waz_male array | No | parse_who_csv |
+| TC029 | Handle missing Month or Length columns in WHO files | CSV without Month/Length | Empty array | Yes | parse_who_csv |
+| TC030 | Verify Month column is used for lenage (non-wtlen) | CSV lenage content | haz_male array | No | parse_who_csv |
+| TC031 | Handle special characters in header like (cm) | Header with (months) | headcz_male array | Yes | parse_who_csv |
+| TC032 | Parse WHO wtage and filter out ages >=24 | CSV with ages 23.0, 24.0, 25.0 | Only <24 ages | No | parse_who_csv |
+| TC033 | Handle malformed CSV lines with varying columns in WHO | CSV with missing data | Parse valid parts | Yes | parse_who_csv |
+| TC034 | Convert empty strings to NaN | sample_cdc_bmi_csv with empty | NaN values for missing | Yes | parse_cdc_csv |
+| TC035 | Save multiple arrays to .npz | Dict of arrays | .npz file created | No | save_npz |
+| TC036 | Load verify integrity save_npz | .npz file | Arrays retrievable | No | save_npz |
+| TC037 | Include metadata in .npz (URL, hash, timestamp) | Arrays + metadata dict | .npz with metadata | No | save_npz |
+| TC038 | Main end-to-end: run main() on all sources | None | Downloads all, saves .npz | No | main |
+| TC039 | Main partial download failure | Network failure | Continues with successful | Yes | main |
+| TC040 | Measure file size reduction | After download | 37KB file | No | N/A |
+| TC041 | Verify .gitignore exclusion removed | .gitignore content | No data/*.npz patterns | No | N/A |
+| TC042 | Data dir is package dir | src/biv/data path | Correct directory | No | N/A |
+| TC043 | Validate WHO/CDC boundary separation | Parsed data | Ages separated | No | N/A |
+| TC044 | Re-run download detects unchanged data | Existing .npz | Skip download | No | main |
+| TC045 | Validate floating point conversion | CDC CSV | f8 arrays | No | parse_cdc_csv |
+| TC046 | Measure mapping from filenames | boys_wtage -> waz_male | waz_male array | No | parse_who_csv |
+| TC047 | Handle BOM in WHO header | BOM prefixed header | Parsed correctly | Yes | parse_who_csv |
+| TC048 | Backward compatibility across package versions | Older data format | Still works | No | _load_reference_data |
+| TC049 | Hash mismatch warning during integrity validation | Tampered hash | Warning logged | Yes | validate_loaded_data_integrity |
+| TC050 | Who age boundary filter under 24 | CSV with Month ages | Ages < 24mo only | No | parse_who_csv |
+| TC051 | Blended boundary interpolation smooth transition at 24 mo | Ages around 24mo | Smooth L/M/S transitions | No | interpolate_lms |
+| TC052 | Main with source_filter='cdc' only downloads CDC sources | source_filter='cdc' | Only CDC downloads | No | main |
+| TC053 | Main with force=True reloads all sources | force=True | All downloads forced | No | main |
+| TC054 | Main strict_mode=True raises on error | strict_mode=True + error | RuntimeError | Yes | main |
+| TC055 | Main without strict mode continues on error | strict_mode=False + error | Continues | No | main |
+| TC056 | Main skips download if timestamp recent | Recent .npz | Skip download | No | main |
+| TC057 | Load verify integrity | .npz file | Arrays loaded correctly | No | N/A |
+| TC058 | Download retry on transient errors | Network intermittent | Success after retry | No | download_csv |
+| TC059 | Download max retries exceeded | Persistent network failure | Exception | Yes | download_csv |
+| TC060 | Download custom timeout parameter | Custom timeout=60 | Uses custom timeout | No | download_csv |
+| TC061 | Skip download when hash matches existing data | Existing .npz with matching hash | Skip download | No | main |
+| TC062 | Force download ignores hash | force=True | Downloads anyway | No | main |
+| TC063 | Parse WHO with extra spaces in header - not supported | Header with spaces | Empty result | Yes | parse_who_csv |
+| TC064 | Parse CDC with tab separators - not supported | Tab separated CSV | ValueError | Yes | parse_cdc_csv |
+| TC065 | Parse WHO empty header column | CSV with empty column name | Parsed (oursel-mr missing) | Yes | parse_who_csv |
+| TC066 | Parse CDC exponential notation | Scientific notation numbers | Correct parsing | No | parse_cdc_csv |
+| TC067 | Parse WHO quotes around values - not supported | Quoted values | Empty result | Yes | parse_who_csv |
+| TC068 | Parse CDC Windows line endings | CRLF line endings | Parsed correctly | No | parse_cdc_csv |
+| TC069 | Parse WHO minimum viable CSV | Basic 4 columns | Parsed array | No | parse_who_csv |
+| TC070 | Metadata timestamp format | Arrays + metadata | Correct timestamp format | No | save_npz |
+| TC071 | Metadata hash storage | Hash value | Fixed length string | No | save_npz |
+| TC072 | Main updates metadata on skip | Existing .npz recent | Metadata updated | No | main |
+| TC073 | Validate array all NaN warning | All NaN array | No crash | No | validate_array |
+| TC074 | Parse large CSV performance | Large CSV data | Completes <1s | No | parse_who_csv/parse_cdc_csv |
+| TC075 | Memory efficiency arrays not copied unnecessarily | Large arrays | Memory efficient | No | N/A |
+| TC076 | Main empty source filter processes all | source_filter='' | All downloads | No | main |
+| TC077 | Parse CDC invalid sex values filtered | CSV with Sex=3 | Only Sex=1,2 included | Yes | parse_cdc_csv |
+| TC078 | Validate array extreme values | Very large finite values | No error | No | validate_array |
+| TC079 | Load growth references from package data | .npz in package | Arrays loaded | No | _load_reference_data |
+| TC080 | Cache behavior reference data | Multiple loads | Same object | No | _load_reference_data |
+| TC081 | Verify expected growth arrays present | Loaded data | All 10 array types | No | _load_reference_data |
+| TC082 | Validate loaded array shapes dtype | Loaded arrays | Correct shapes/dtypes | No | _load_reference_data |
+| TC083 | Handle missing data file error | No .npz file | Empty dict | Yes | _load_reference_data |
+| TC084 | Handle corrupted npz file | Corrupted .npz | Exception | Yes | _load_reference_data |
+| TC085 | Memory efficiency loaded data | Large loaded arrays | Memory efficient | No | _load_reference_data |
+| TC086 | Data version compatibility check | Version metadata | Compatible | No | _load_reference_data |
+| TC087 | Cross environment compatibility | Different envs | Works everywhere | No | _load_reference_data |
+| TC088 | Offline fallback scenario | No network | Works from package | No | calculate_growth_metrics |
+| TC089 | Detect data file corruption hash | Corrupted data | False returned | Yes | validate_loaded_data_integrity |
+| TC090 | Handle sparse reference data | Arrays with NaNs | Graceful handling | Yes | _load_reference_data |
+| TC091 | Performance benchmarks data loading | Large arrays | Fast loading | No | _load_reference_data |
+| TC092 | Integration calculate_growth_metrics loaded data | Loaded data | Z-scores computed | No | calculate_growth_metrics |
+| TC093 | SHA256 integrity loaded data | Data with hashes | Valid integrity | No | validate_loaded_data_integrity |
+| TC094 | Always download even with recent timestamps | Recent .npz | Downloads anyway | No | main |
+| TC095 | Force update hash differs remote | force=True + hash diff | Downloads | No | main |
+| TC096 | Security notification hash mismatch load | Mismatch hash | Warning logged | Yes | _load_reference_data |
 
 ##### Phase 3: ZScoreDetector Class Implementation
 
