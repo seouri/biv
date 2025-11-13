@@ -1,0 +1,351 @@
+/* Custom CSS Styles for Growth Error Labeling Dashboard */
+/* Accessibility-enhanced styles with WCAG 2.1 AA compliance */
+
+/* Fix Streamlit column width issues */
+.stApp [data-testid="column"] {
+    min-width: 0 !important;
+    overflow: visible !important;
+}
+
+.stApp [data-testid="stHorizontalBlock"] {
+    gap: 1rem !important;
+}
+
+/* Ensure main content container uses full width */
+.main .block-container {
+    max-width: 100% !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+}
+
+/* Focus States - Enhanced visibility for keyboard navigation */
+*:focus {
+    outline: 3px solid #2196f3 !important;
+    outline-offset: 2px !important;
+}
+
+button:focus, .stButton > button:focus {
+    outline: 3px solid #2196f3 !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.2) !important;
+}
+
+/* Skip to main content link for screen readers */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #2196f3;
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    z-index: 100;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Patient Info Card Styling - Enhanced contrast */
+.patient-info-card {
+    background: linear-gradient(135deg, #5568d3 0%, #6941a0 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Navigation Buttons */
+.stButton > button {
+    border-radius: 5px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Navigation button sizing fix */
+.stButton {
+    min-width: 0 !important;
+}
+
+/* Chart container full width */
+[data-testid="stPlotlyChart"] {
+    width: 100% !important;
+}
+
+/* Sidebar Styling */
+.css-1d391kg {  /* Streamlit sidebar class */
+    background-color: #f8f9fa;
+}
+
+/* Progress Bar */
+.stProgress > div > div {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Data Table Highlighting */
+.dataframe {
+    font-size: 14px;
+}
+
+/* Error Row Highlighting */
+.error-row {
+    background-color: #ffebee !important;
+    border-left: 4px solid #d32f2f !important;
+}
+
+/* Selected Row Highlighting */
+.selected-row {
+    background-color: #fff3e0 !important;
+    border-left: 4px solid #ff9800 !important;
+    font-weight: 600;
+}
+
+/* Completion Indicators */
+.completion-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.completion-badge.completed {
+    background-color: #c8e6c9;
+    color: #2e7d32;
+}
+
+.completion-badge.incomplete {
+    background-color: #fff9c4;
+    color: #f57f17;
+}
+
+.completion-badge.current {
+    background-color: #bbdefb;
+    color: #1565c0;
+}
+
+/* Patient List Items */
+.patient-list-item {
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.patient-list-item:hover {
+    background-color: #e8eaf6;
+    transform: translateX(3px);
+}
+
+.patient-list-item.completed {
+    background-color: #e8f5e9;
+    border-left-color: #4caf50;
+}
+
+.patient-list-item.incomplete {
+    background-color: #fff3e0;
+    border-left-color: #ff9800;
+}
+
+.patient-list-item.current {
+    background-color: #e3f2fd;
+    border-left-color: #2196f3;
+    font-weight: 700;
+}
+
+/* Control Sections */
+.control-section {
+    background-color: #fafafa;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 10px 0;
+    border: 1px solid #e0e0e0;
+}
+
+/* Metrics Display */
+.metric-card {
+    background-color: white;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 4px solid #2196f3;
+    margin: 8px 0;
+}
+
+.metric-label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #333;
+    margin-top: 4px;
+}
+
+/* Text Areas */
+.stTextArea textarea {
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.stTextArea textarea:focus {
+    border-color: #2196f3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+}
+
+/* Success/Warning/Error Messages */
+.stSuccess {
+    background-color: #e8f5e9;
+    border-left: 4px solid #4caf50;
+    border-radius: 6px;
+}
+
+.stWarning {
+    background-color: #fff3e0;
+    border-left: 4px solid #ff9800;
+    border-radius: 6px;
+}
+
+.stError {
+    background-color: #ffebee;
+    border-left: 4px solid #f44336;
+    border-radius: 6px;
+}
+
+/* Chart Container */
+.plotly-chart-container {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Dividers */
+hr {
+    margin: 20px 0;
+    border: none;
+    border-top: 2px solid #e0e0e0;
+}
+
+/* Section Headers - Enhanced for screen readers */
+h1, h2, h3 {
+    color: #1a1a1a;  /* Higher contrast */
+    font-weight: 700;
+}
+
+h3 {
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+/* Screen reader only class */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    * {
+        border-color: currentColor !important;
+    }
+    
+    .patient-info-card {
+        background: #1a1a1a;
+        border: 2px solid white;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Dark mode support for accessibility */
+@media (prefers-color-scheme: dark) {
+    .control-section {
+        background-color: #2a2a2a;
+        border-color: #444;
+        color: #e0e0e0;
+    }
+    
+    .metric-card {
+        background-color: #2a2a2a;
+        color: #e0e0e0;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .patient-info-card {
+        padding: 15px;
+    }
+    
+    .metric-value {
+        font-size: 16px;
+    }
+    
+    .control-section {
+        padding: 12px;
+    }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Animation for page transitions */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.main {
+    animation: fadeIn 0.3s ease-in-out;
+}

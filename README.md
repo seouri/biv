@@ -1,222 +1,186 @@
+# Height Error Labeling Dashboard
 
-# BIV: Detect and Remove Biologically Implausible Values
+Interactive application for reviewing and labeling errors in pediatric longitudinal height measurements.
 
-`biv` is a Python package for detecting and removing Biologically Implausible Values (BIVs) in longitudinal weight and height measurements. Designed for researchers and data scientists in public health and epidemiology, `biv` provides a flexible and powerful way to clean biomedical data for reliable analysis.
+## 📋 Table of Contents
 
-## Core Features
+- [Installation](#installation)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
+- [Input Data](#input-data)
+- [Output Data](#output-data)
 
-- **Clear, Verb-Based API**: Separate, intuitive functions for `detect()` and `remove()` operations.
+---
 
-- **Highly Configurable**: Don't get stuck with hardcoded limits. Define your own custom ranges to fit your specific dataset—whether it's pediatric, geriatric, or specialized. Z-score outlier detection requires age and sex columns.
+## 🚀 Installation
 
-- **Multiple Detection Methods**: Natively supports range checks and z-score outlier detection.
+### Prerequisites
 
-- **Built for Pandas**: Integrates seamlessly into the pandas data analysis ecosystem.
-    
+- **Python 3.11+**
+- **uv** package manager
 
-## Installation
+### Setup Steps
 
-Install `biv` via pip:
+1. **Clone or download this repository**
 
-```sh
-pip install biv
+2. **Install dependencies using uv**:
+   ```bash
+   uv sync
+   ```
+
+3. **Verify installation**:
+   ```bash
+   uv run streamlit --version
+   ```
+
+---
+
+## 💻 Usage
+
+### Starting the Application
+
+Run the dashboard using uv:
+```bash
+uv run streamlit run main.py
 ```
 
-Requires Python 3.8+ and pandas.
+The application will open in your default web browser at `http://localhost:8501`.
 
-## Quick Start
+### Using the Dashboard
 
-The `biv` package provides two primary functions:
+1. **Select a Patient**: Use the sidebar to choose a patient from the dropdown menu, or click individual patient button
+2. **Review Measurements**: Click on data points in the growth charts or use ◀/▶ arrows to navigate, or click on a row in the data table
+3. **Mark Errors**: Click "Mark as Error" for problematic measurements
+4. **Add Comments**: Provide specific comments for individual points or general notes for the entire patient
+5. **Complete Review**: Click "Mark Patient as Complete" when finished reviewing all measurements for a patient
+6. **Export Data**: Use the "💾 Save Labeled Data" button in the sidebar to save and optionally download results
 
-- `biv.detect()`: Adds boolean columns to your DataFrame to flag implausible values.
-    
-- `biv.remove()`: Replaces implausible values with `NaN`.
-    
+---
 
-Here's a typical workflow:
+## 📁 Project Structure
 
-```python
-import pandas as pd
-import numpy as np
-import biv
+```
+biv/
+│
+├── main.py                      # Application entry point
+├── pyproject.toml               # Project dependencies and configuration
+├── README.md                    # This file
+│
+├── data/                        # Data directory
+│   ├── raw/                     # INPUT: Place your patient data here
+│   │   ├── visits_60_patients.csv        # Patient visit data sample (first 60 patients)
+│   │
+│   ├── growth_standard/         # Reference growth standards (DO NOT MODIFY)
+│   │   ├── who_growth_standards.csv      # WHO growth charts
+│   │   ├── statage_combined.csv          # CDC height-for-age standards
+│   │   ├── bmiagerev.csv                 # CDC BMI standards
+│   │   └── ...                           # Other reference files
+│   │
+│   ├── labels/                  # INTERMEDIATE OUTPUT: Individual patient label files (JSON) -- for data persistence
+│   │   ├── Pxxxxxx_labels.json
+│   │   └── Pxxxxxy_labels.json
+│   │
+│   └── processed/               # OUTPUT: Combined labeled datasets
+│       └── all_patients_labeled.csv
+│
+└── src/                         # Source code
+    ├── app.py                   # Main application logic
+    ├── config.py                # Configuration constants
+    │
+    ├── components/              # UI components
+    │   ├── sidebar.py           # Sidebar navigation
+    │   ├── growth_chart.py      # Height-for-age chart
+    │   ├── velocity_chart.py    # Growth velocity chart
+    │   ├── data_table.py        # Measurement data table
+    │   └── ...
+    │
+    ├── data/                    # Data handling
+    │   ├── loader.py            # Data loading functions
+    │   ├── processor.py         # Data preprocessing
+    │   └── growth_standards.py  # Z-score calculations
+    │
+    ├── utils/                   # Utility functions
+    │   ├── calculations.py      # Growth velocity & metrics
+    │   ├── persistence.py       # Save/load labels
+    │   └── state_manager.py     # Session state management
+    │
+    └── styles/
+        └── custom.css           # Custom styling
+```
 
-# Sample longitudinal dataset
-data = pd.DataFrame({
-    'patient_id': [1, 1, 1, 2, 2, 2],
-    'sex': ['M', 'M', 'M', 'F', 'F', 'F'],
-    'age': [10, 11, 12, 12, 13, 14],
-    'weight_kg': [35, 38, 999, 40, 42, 41],    # 999 is an obvious error
-    'height_cm': [140, 150, 152, 155, 50, 159] # 50 is an obvious error
-})
+---
 
-# 1. Define your detection methods and their parameters
-# Use built-in defaults or customize them as needed.
-detection_methods = {
-    'range': {
-        'weight_kg': {'min': 20, 'max': 200},
-        'height_cm': {'min': 100, 'max': 220}
-    },
-    'zscore': {}  # No additional parameters needed
+## 📥 Input Data
+
+### Required Input Format
+
+Place your patient data CSV file(s) in the `data/raw/` directory.
+
+**Required Columns:**
+- `patient_id` - Unique patient identifier
+- `visit_date` - Date of visit (any parseable date format)
+- `age_in_days` - Patient age in days at visit
+- `height_in` - Height measurement in inches
+- `weight_oz` - Weight measurement in ounces (optional, for BMI calculations)
+- `sex` - Patient sex ('M' or 'F')
+
+**Example:**
+```csv
+patient_id,visit_date,age_in_days,height_in,weight_oz,sex
+Pxxxxxx,xxxx-xx-xx,xx,xx,xx,xx
+Pxxxxxx,xxxx-xx-xx,xx,xx,xx,xx
+```
+
+### Modifying Data Source
+
+By default, the app loads `data/raw/visits_60_patients.csv`. To change this:
+
+1. Edit `src/data/loader.py`, line ~65
+2. Update the file path in the `load_patient_data()` function
+
+---
+
+## 📤 Output Data
+
+The application generates two types of output files:
+
+### 1. Individual Label Files (JSON)
+**Location:** `data/labels/`
+
+**Format:** `{patient_id}_labels.json`
+
+**Contents:**
+```json
+{
+  "patient_id": "Pxxxxxx",
+  "error_indices": [5, 12],
+  "point_comments": {
+    "5": "Implausible growth spurt",
+    "12": "Possible recording error"
+  },
+  "general_comment": "Overall growth pattern looks normal except for noted outliers",
+  "completed": true,
+  "timestamp": "2025-11-13T10:30:45"
 }
-
-# 2. Detect BIVs, which adds flag columns
-flagged_df = biv.detect(
-    data,
-    methods=detection_methods,
-    weight_col='weight_kg',
-    height_col='height_cm'
-)
-print("--- Detected BIVs ---")
-print(flagged_df)
-# --- Detected BIVs ---
-#    patient_id sex  age  weight_kg  height_cm  weight_kg_biv_flag  height_cm_biv_flag
-# 0           1   M   10         35        140               False               False
-# 1           1   M   11         38        150               False               False
-# 2           1   M   12        999        152                True               False
-# 3           2   F   12         40        155               False               False
-# 4           2   F   13         42         50               False                True
-# 5           2   F   14         41        159               False               False
-
-
-# 3. Remove the detected BIVs for a clean dataset
-cleaned_df = biv.remove(
-    data,
-    methods=detection_methods,
-    weight_col='weight_kg',
-    height_col='height_cm'
-)
-print("\n--- Cleaned Data ---")
-print(cleaned_df)
-# --- Cleaned Data ---
-#    patient_id sex  age  weight_kg  height_cm
-# 0           1   M   10         35        140
-# 1           1   M   11         38        150
-# 2           1   M   12        NaN        152
-# 3           2   F   12         40        155
-# 4           2   F   13         42        NaN
-# 5           2   F   14         41        159
 ```
 
-## Advanced Usage: Full Configuration
+### 2. Combined Labeled Dataset (CSV)
+**Location:** `data/processed/all_patients_labeled.csv`
 
-The true power of `biv` comes from its flexibility. You can tailor every aspect of the detection logic. This is essential for specialized datasets, such as those in pediatrics.
+**Generated:** When you click "💾 Save Labeled Data" in the sidebar
 
-### Example: Pediatric Data Cleaning
+**Contents:** 
+- All original patient data columns
+- `error` - Boolean flag indicating if the measurement was marked as an error
+- `point_comment` - Specific comment for that measurement (if any)
+- `general_comment` - General patient comment
+- `completed` - Whether the patient review is complete
 
-For a children's dataset, adult ranges are inappropriate. Here's how you can specify custom rules.
-
-```python
-import pandas as pd
-import biv
-
-pediatric_data = pd.DataFrame({
-    'subject_id': [101, 101, 102, 102],
-    'visit_age': [2, 3, 2, 3],
-    'body_weight': [12.5, 14.0, 13.0, 100], # 100kg is a BIV for a 3-year-old
-    'body_height': [85, 95, 88, 92]
-})
-
-# Define strict, age-appropriate rules
-pediatric_methods = {
-    'range': {
-        'body_weight': {'min': 5, 'max': 30},
-        'body_height': {'min': 60, 'max': 110}
-    },
-    'zscore': {}  # Requires 'visit_age' and 'sex' columns (assuming 'sex' is in data)
-}
-
-# Detect BIVs using custom column names and methods
-flagged_pediatric_data = biv.detect(
-    pediatric_data,
-    methods=pediatric_methods,
-    patient_id_col='subject_id',
-    age_col='visit_age',
-    weight_col='body_weight',
-    height_col='body_height',
-    flag_suffix='_is_implausible' # Customize the flag column suffix
-)
-
-print(flagged_pediatric_data)
-#    subject_id  visit_age  body_weight  body_height  body_weight_is_implausible  body_height_is_implausible
-# 0         101          2         12.5           85                       False                       False
-# 1         101          3         14.0           95                       False                       False
-# 2         102          2         13.0           88                       False                       False
-# 3         102          3        100.0           92                        True                       False
+**Example:**
+```csv
+patient_id,visit_date,age_in_days,height_in,weight_oz,sex,error,point_comment,general_comment,completed
+Pxxxxxx,xxxx-xx-xx,xx,xx,xx,xx,False,,,True
+Pxxxxxx,xxxx-xx-xx,xx,xx,xx,xx,True,Implausible growth spurt,Overall normal,True
 ```
 
-By default, when multiple detection methods are used, their flags are combined using logical OR: a value is flagged as BIV if any method detects it as such. Future enhancements may allow custom combination logic, such as requiring flags from specific methods or using AND combinations.
-
-## Unit Handling Warnings
-
-The package currently assumes input numeric columns (weight, height) are in standard units (kg/cm). Mismatched units (e.g., weight in lbs, height in inches) can lead to incorrect range checks and z-score calculations. To handle this:
-
-- Ensure data consistency before use.
-- Standardize to kg/cm if possible.
-- For zscore method: Uses WHO growth standards (<24 months) or CDC (≥24 months); ages in months; sex as 'M'/'F'. Warnings logged for potential unit issues (e.g., height >250 cm suggests inches) or age >240 mo (set to NaN). Invalid sex raises errors.
-
-For cross-checking, consider if detection results align with expected outliers for healthy population ranges.
-
-## API Reference
-
-### `biv.detect(dataframe, methods, patient_id_col='patient_id', age_col='age', sex_col='sex', weight_col='weight_kg', height_col='height_cm', flag_suffix='_biv_flag', progress_bar=False)`
-
-Identifies BIVs and returns a DataFrame with added boolean flag columns.
-
-- **`dataframe`** (pd.DataFrame): The input data.
-    
-- **`methods`** (dict): A dictionary defining the detection methods and their parameters.
-    
-    - **`range`** (dict): Keys are column names (`weight_col`, `height_col`) and values are dictionaries with `'min'` and `'max'` keys.
-        
-    - **`zscore`** (dict): Defines z-score parameters. Note: Requires 'age' and 'sex' columns in the DataFrame for z-score calculation (defaults to column names specified in function parameters). Computes anthropometric z-scores for weight-for-age (WAZ), height-for-age (HAZ), weight-for-height (WHZ), BMI-for-age (BMIz), and head circumference-for-age (HEADCZ) using WHO/CDC growth standards.
-
-        Z-Score Cutoffs for BIV Flagging:
-        - Weight-for-age: <-5 or >8
-        - Height-for-age: <-5 or >4
-        - Weight-for-height: <-4 or >8
-        - BMI-for-age: <-4 or >8
-        - Head circumference-for-age: <-5 or >5
-
-
-        Z-score calculations strictly follow CDC methods. For reproducibility, ZScoreDetector uses WHO/CDC reference data:
-        - WHO Child Growth Standards (2006) for ages <24 months: https://www.cdc.gov/growthcharts/who-data-files.htm
-        - CDC 2000 Growth Charts for ages ≥24 months: https://www.cdc.gov/growthcharts/cdc-data-files.htm
-        Data is cached locally in the `data/` subdirectory as .npz files.
-
-        **References**:
-        - [CDC Growth Charts SAS Program](docs/cdc/sas-program-for-cdc-growth-charts.md) - Includes CDC's Extended BMI-for-Age Growth Charts
-        - [WHO Growth Charts SAS Program](docs/cdc/sas-program-for-who-growth-charts.md)
-        - [Modified Z-Scores](docs/cdc/modified-z-scores.md) - Data Quality Assessment on Anthropometry Data
-        - [Extended CDC BMI-for-Age Growth Charts](docs/cdc/data-file-cdc-extended-bmi-for-age-growth-charts.md) - Data File for the Extended CDC BMI-for-age Growth Charts for Children and Adolescents
-
-        Optional columns: 'head_circ_cm' for head circumference measurements.
-            
-- **`..._col`** (str): Column name identifiers for patient ID, age, sex, weight, and height.
-    
-- **`flag_suffix`** (str): The suffix for the new boolean flag columns.
-    
-- **`progress_bar`** (bool, default False): Whether to display a progress bar during processing.
-
-
-**Returns**: A `pandas.DataFrame` with added flag columns indicating BIVs.
-
-### `biv.remove(dataframe, methods, ...)`
-
-Identifies and removes BIVs, replacing them with `numpy.nan`. It accepts the same parameters as `biv.detect()`.
-
-**Returns**: A `pandas.DataFrame` with BIVs replaced by `NaN`.
-
-
-## Contributing
-
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, development workflow, and guidelines.
-
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-
-## Contact
-
-For questions or support, please open an [issue on GitHub](https://github.com/seouri/biv/issues).
+---
