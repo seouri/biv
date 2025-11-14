@@ -7,10 +7,10 @@ from datetime import datetime
 
 import pandas as pd
 
-from src.config import LABELS_DIR, PROCESSED_DATA_DIR
+from src.config import LABELS_DIR, PROCESSED_DATA_DIR, get_user_labels_dir, get_user_processed_dir
 
 
-def get_label_file_path(patient_id: str) -> Path:
+def get_label_file_path(patient_id: str, username: Optional[str] = None) -> Path:
     """
     Get the file path for a patient's label data.
     
@@ -18,13 +18,16 @@ def get_label_file_path(patient_id: str) -> Path:
     ----------
     patient_id : str
         Patient identifier
+    username : str, optional
+        Username for user-specific storage
         
     Returns
     -------
     Path
         Path to the JSON file for this patient
     """
-    return LABELS_DIR / f"{patient_id}_labels.json"
+    labels_dir = get_user_labels_dir(username)
+    return labels_dir / f"{patient_id}_labels.json"
 
 
 def save_error_labels(
@@ -32,7 +35,8 @@ def save_error_labels(
     error_indices: Set[int],
     point_comments: Dict[int, str] = None,
     general_comment: str = "",
-    is_complete: bool = False
+    is_complete: bool = False,
+    username: Optional[str] = None
 ) -> None:
     """
     Save error labels and comments for a patient.
@@ -49,6 +53,8 @@ def save_error_labels(
         General comment about the patient
     is_complete : bool, default False
         Whether the patient review is complete
+    username : str, optional
+        Username for user-specific storage
         
     Raises
     ------
@@ -65,7 +71,8 @@ def save_error_labels(
     
     try:
         # Ensure labels directory exists
-        LABELS_DIR.mkdir(parents=True, exist_ok=True)
+        labels_dir = get_user_labels_dir(username)
+        labels_dir.mkdir(parents=True, exist_ok=True)
         
         data = {
             "patient_id": patient_id,
@@ -76,7 +83,7 @@ def save_error_labels(
             "general_comment": general_comment.strip() if general_comment else "",
         }
         
-        file_path = get_label_file_path(patient_id)
+        file_path = get_label_file_path(patient_id, username)
         
         # Write to temporary file first, then rename (atomic operation)
         temp_path = file_path.with_suffix('.tmp')
@@ -97,7 +104,8 @@ def save_all_labeled_data(
     override_point_comments: Optional[Dict[int, str]] = None,
     override_general_comment: Optional[str] = None,
     override_completed: Optional[bool] = None,
-    output_path: Optional[Path] = None
+    output_path: Optional[Path] = None,
+    username: Optional[str] = None
 ) -> Path:
     """Persist the entire dataset with error flags and comments appended.
 
@@ -116,7 +124,9 @@ def save_all_labeled_data(
     override_completed : bool, optional
         Completion status for the override patient.
     output_path : Path, optional
-        Destination file path. Defaults to PROCESSED_DATA_DIR/all_patients_labeled.csv.
+        Destination file path. Defaults to user-specific processed data directory.
+    username : str, optional
+        Username for user-specific storage
 
     Returns
     -------
@@ -127,7 +137,12 @@ def save_all_labeled_data(
     if all_data is None or all_data.empty:
         raise ValueError("All patient data is empty")
 
-    destination = output_path or (PROCESSED_DATA_DIR / "all_patients_labeled.csv")
+    if output_path is None:
+        processed_dir = get_user_processed_dir(username)
+        destination = processed_dir / "all_patients_labeled.csv"
+    else:
+        destination = output_path
+    
     destination.parent.mkdir(parents=True, exist_ok=True)
 
     # Preserve patient order as they appear in the source data
@@ -139,7 +154,7 @@ def save_all_labeled_data(
         if patient_rows.empty:
             continue
 
-        labels = load_error_labels(patient_id)
+        labels = load_error_labels(patient_id, username)
         error_indices = labels.get("error_indices", set())
         point_comments = labels.get("point_comments", {})
         general_comment = labels.get("general_comment", "")
@@ -191,7 +206,7 @@ def save_all_labeled_data(
     return destination
 
 
-def load_error_labels(patient_id: str) -> Dict:
+def load_error_labels(patient_id: str, username: Optional[str] = None) -> Dict:
     """
     Load error labels and comments for a patient.
     
@@ -199,6 +214,8 @@ def load_error_labels(patient_id: str) -> Dict:
     ----------
     patient_id : str
         Patient identifier
+    username : str, optional
+        Username for user-specific storage
         
     Returns
     -------
@@ -228,7 +245,7 @@ def load_error_labels(patient_id: str) -> Dict:
         "last_updated": None,
     }
     
-    file_path = get_label_file_path(patient_id)
+    file_path = get_label_file_path(patient_id, username)
     
     if not file_path.exists():
         return default_data
@@ -260,7 +277,7 @@ def load_error_labels(patient_id: str) -> Dict:
         return default_data
 
 
-def save_patient_status(patient_id: str, is_complete: bool) -> None:
+def save_patient_status(patient_id: str, is_complete: bool, username: Optional[str] = None) -> None:
     """
     Update the completion status for a patient.
     
@@ -270,9 +287,11 @@ def save_patient_status(patient_id: str, is_complete: bool) -> None:
         Patient identifier
     is_complete : bool
         Whether the patient review is complete
+    username : str, optional
+        Username for user-specific storage
     """
     # Load existing data
-    existing_data = load_error_labels(patient_id)
+    existing_data = load_error_labels(patient_id, username)
     
     # Update completion status
     save_error_labels(
@@ -280,13 +299,19 @@ def save_patient_status(patient_id: str, is_complete: bool) -> None:
         error_indices=existing_data["error_indices"],
         point_comments=existing_data["point_comments"],
         general_comment=existing_data["general_comment"],
-        is_complete=is_complete
+        is_complete=is_complete,
+        username=username
     )
 
 
-def get_all_patient_statuses() -> Dict[str, bool]:
+def get_all_patient_statuses(username: Optional[str] = None) -> Dict[str, bool]:
     """
     Get completion status for all patients with saved labels.
+    
+    Parameters
+    ----------
+    username : str, optional
+        Username for user-specific storage
     
     Returns
     -------
@@ -295,10 +320,11 @@ def get_all_patient_statuses() -> Dict[str, bool]:
     """
     statuses = {}
     
-    if not LABELS_DIR.exists():
+    labels_dir = get_user_labels_dir(username)
+    if not labels_dir.exists():
         return statuses
     
-    for label_file in LABELS_DIR.glob("*_labels.json"):
+    for label_file in labels_dir.glob("*_labels.json"):
         try:
             with open(label_file, 'r') as f:
                 data = json.load(f)
@@ -311,7 +337,7 @@ def get_all_patient_statuses() -> Dict[str, bool]:
     return statuses
 
 
-def delete_patient_labels(patient_id: str) -> bool:
+def delete_patient_labels(patient_id: str, username: Optional[str] = None) -> bool:
     """
     Delete all saved labels for a patient.
     
@@ -319,13 +345,15 @@ def delete_patient_labels(patient_id: str) -> bool:
     ----------
     patient_id : str
         Patient identifier
+    username : str, optional
+        Username for user-specific storage
         
     Returns
     -------
     bool
         True if file was deleted, False if it didn't exist
     """
-    file_path = get_label_file_path(patient_id)
+    file_path = get_label_file_path(patient_id, username)
     
     if file_path.exists():
         file_path.unlink()
@@ -334,26 +362,30 @@ def delete_patient_labels(patient_id: str) -> bool:
     return False
 
 
-def export_all_labels(output_path: Optional[Path] = None) -> Path:
+def export_all_labels(output_path: Optional[Path] = None, username: Optional[str] = None) -> Path:
     """
     Export all patient labels to a single JSON file.
     
     Parameters
     ----------
     output_path : Path, optional
-        Output file path. If None, saves to LABELS_DIR/all_labels_export.json
+        Output file path. If None, saves to user-specific labels directory.
+    username : str, optional
+        Username for user-specific storage
         
     Returns
     -------
     Path
         Path to the exported file
     """
+    labels_dir = get_user_labels_dir(username)
+    
     if output_path is None:
-        output_path = LABELS_DIR / "all_labels_export.json"
+        output_path = labels_dir / "all_labels_export.json"
     
     all_labels = {}
     
-    for label_file in LABELS_DIR.glob("*_labels.json"):
+    for label_file in labels_dir.glob("*_labels.json"):
         if label_file.name == "all_labels_export.json":
             continue
             

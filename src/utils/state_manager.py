@@ -9,6 +9,11 @@ from src.config import STATE_KEYS
 from src.utils.persistence import load_error_labels, get_all_patient_statuses
 
 
+def _get_current_username() -> Optional[str]:
+    """Get the current authenticated username from session state."""
+    return st.session_state.get("authenticated_user")
+
+
 def initialize_session_state(default_patient_id: Optional[str] = None) -> None:
     """
     Initialize Streamlit session state with default values.
@@ -45,7 +50,8 @@ def initialize_session_state(default_patient_id: Optional[str] = None) -> None:
     st.session_state[STATE_KEYS["general_comment"]] = ""
     
     # Patient completion statuses (dict: patient_id -> bool)
-    st.session_state[STATE_KEYS["patient_statuses"]] = get_all_patient_statuses()
+    username = _get_current_username()
+    st.session_state[STATE_KEYS["patient_statuses"]] = get_all_patient_statuses(username)
     
     if default_patient_id:
         st.session_state[selector_key] = default_patient_id
@@ -261,7 +267,8 @@ def load_patient_labels(patient_id: str) -> None:
     patient_id : str
         Patient identifier
     """
-    labels = load_error_labels(patient_id)
+    username = _get_current_username()
+    labels = load_error_labels(patient_id, username)
     
     st.session_state[STATE_KEYS["error_indices"]] = labels["error_indices"]
     st.session_state[STATE_KEYS["point_comments"]] = labels["point_comments"]

@@ -101,6 +101,8 @@ def auto_save_labels(patient_id: str) -> None:
         patient_id: Patient identifier
     """
     try:
+        from src.auth import get_current_user
+        username = get_current_user()
         error_indices = get_error_indices()
         point_comments = get_all_point_comments()
         general_comment = get_general_comment()
@@ -109,7 +111,8 @@ def auto_save_labels(patient_id: str) -> None:
             error_indices=error_indices,
             point_comments=point_comments,
             general_comment=general_comment,
-            is_complete=is_patient_complete(patient_id)
+            is_complete=is_patient_complete(patient_id),
+            username=username
         )
     except Exception as e:
         st.error(f"Error saving labels: {e}")
@@ -198,6 +201,8 @@ def main():
         # Persist current patient state before exporting combined dataset
         auto_save_labels(current_patient_id)
         try:
+            from src.auth import get_current_user
+            username = get_current_user()
             point_comments = get_all_point_comments()
             general_comment = get_general_comment()
             output_path = save_all_labeled_data(
@@ -206,7 +211,8 @@ def main():
                 override_error_indices=error_indices,
                 override_point_comments=point_comments,
                 override_general_comment=general_comment,
-                override_completed=is_patient_complete(current_patient_id)
+                override_completed=is_patient_complete(current_patient_id),
+                username=username
             )
 
             try:

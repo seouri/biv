@@ -6,6 +6,7 @@ Interactive application for reviewing and labeling errors in pediatric longitudi
 
 - [Installation](#installation)
 - [Usage](#usage)
+- [Authentication](#authentication)
 - [Project Structure](#project-structure)
 - [Input Data](#input-data)
 - [Output Data](#output-data)
@@ -45,6 +46,22 @@ uv run streamlit run main.py
 ```
 
 The application will open in your default web browser at `http://localhost:8501`.
+
+### 🔐 Authentication
+
+The application requires login for user-specific data management. Each user's labels and processed data are stored separately.
+
+**Available Users:**
+- `user1`
+- `user2`
+- `user3`
+- `user4`
+- `user5`
+
+**User-Specific Data Storage:**
+- Labels are saved to: `data/labels/{username}/`
+- Processed data exports to: `data/processed/{username}/`
+
 
 ### Using the Dashboard
 

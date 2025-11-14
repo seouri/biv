@@ -1,7 +1,7 @@
 """
 Entry point for the Growth Error Labeling Dashboard.
 
-This file imports and runs the main Streamlit application.
+This file imports and runs the main Streamlit application with authentication.
 """
 
 import sys
@@ -21,8 +21,25 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Import and run the main app
+# Import authentication and app
+from src.auth import is_authenticated, render_login_page, get_current_user, logout
 from src.app import main
 
 if __name__ == "__main__":
-    main()
+    # Check if user is authenticated
+    if not is_authenticated():
+        # Show login page
+        render_login_page()
+    else:
+        # Show logout button in the sidebar and run main app
+        with st.sidebar:
+            st.markdown("---")
+            current_user = get_current_user()
+            st.success(f"👤 Logged in as: **{current_user}**")
+            if st.button("🚪 Logout", use_container_width=True):
+                logout()
+                st.rerun()
+            st.markdown("---")
+        
+        # Run the main application
+        main()

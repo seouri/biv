@@ -313,6 +313,7 @@ def _save_current_state(
         Whether review is complete
     """
     from src.utils.state_manager import get_point_comment, get_general_comment, get_error_indices
+    from src.auth import get_current_user
     
     # Always get the latest error indices from session state to ensure we have the most current data
     current_error_indices = get_error_indices()
@@ -325,6 +326,7 @@ def _save_current_state(
             point_comments[idx] = comment
     
     general_comment = get_general_comment()
+    username = get_current_user()
     
     # Save to disk
     save_error_labels(
@@ -332,7 +334,8 @@ def _save_current_state(
         error_indices=current_error_indices,
         point_comments=point_comments,
         general_comment=general_comment,
-        is_complete=is_complete
+        is_complete=is_complete,
+        username=username
     )
 
 

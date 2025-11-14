@@ -21,6 +21,9 @@ wheels/
 data/raw/*
 data/processed/*
 data/labels/*
+# User-specific data directories
+data/labels/user*/
+data/processed/user*/
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/labels/.gitkeep

@@ -3,6 +3,7 @@ Configuration constants for the error labeling dashboard.
 """
 
 from pathlib import Path
+from typing import Optional
 
 # Project paths
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -14,6 +15,48 @@ LABELS_DIR = DATA_DIR / "labels"
 # Ensure directories exist
 LABELS_DIR.mkdir(parents=True, exist_ok=True)
 PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def get_user_labels_dir(username: Optional[str] = None) -> Path:
+    """
+    Get the labels directory for a specific user.
+    
+    Parameters
+    ----------
+    username : str, optional
+        Username to get directory for. If None, returns base LABELS_DIR.
+        
+    Returns
+    -------
+    Path
+        User-specific labels directory
+    """
+    if username:
+        user_dir = LABELS_DIR / username
+        user_dir.mkdir(parents=True, exist_ok=True)
+        return user_dir
+    return LABELS_DIR
+
+
+def get_user_processed_dir(username: Optional[str] = None) -> Path:
+    """
+    Get the processed data directory for a specific user.
+    
+    Parameters
+    ----------
+    username : str, optional
+        Username to get directory for. If None, returns base PROCESSED_DATA_DIR.
+        
+    Returns
+    -------
+    Path
+        User-specific processed data directory
+    """
+    if username:
+        user_dir = PROCESSED_DATA_DIR / username
+        user_dir.mkdir(parents=True, exist_ok=True)
+        return user_dir
+    return PROCESSED_DATA_DIR
 
 # Data constants
 DAYS_PER_YEAR = 365.25
