@@ -14,6 +14,7 @@ sys.path.insert(0, str(project_root))
 
 import streamlit as st
 import pandas as pd
+from streamlit_shortcuts import shortcut_button
 
 # Opt into pandas' future behavior to avoid silent dtype downcasting warnings
 pd.set_option("future.no_silent_downcasting", True)
@@ -269,7 +270,7 @@ def main():
         header_col1, header_col2, header_col3, header_col4 = st.columns([4, 2, 0.5, 0.5])
         
         with header_col1:
-            st.info("👇 Click a measurement or use the ◀/▶ arrows to navigate and mark measurements as errors.\n\n* Select area on the plot or use plot control to zoom in")
+            st.info("👇 Click a measurement or use the ◀/▶ arrows (or ←/→ keys) to navigate and mark measurements as errors.\n\n* Select area on the plot or use plot control to zoom in")
         
         # Navigation buttons for point selection
         total_visits = len(valid_height_indices)
@@ -287,7 +288,15 @@ def main():
         with header_col3:
             st.write("")  # Spacer for alignment
             prev_disabled = (total_visits == 0) or (current_position is None) or (current_position <= 0)
-            if st.button("◀", key="prev_visit", disabled=prev_disabled, help="Previous visit", use_container_width=True):
+            if shortcut_button(
+                "◀",
+                ["arrowleft"],
+                key="prev_visit",
+                disabled=prev_disabled,
+                help="Previous visit (←)",
+                use_container_width=True,
+                hint=False
+            ):
                 target_index = valid_height_indices[current_position - 1]
                 set_selected_point_index(int(target_index))
                 st.rerun()
@@ -295,7 +304,15 @@ def main():
         with header_col4:
             st.write("")  # Spacer for alignment
             next_disabled = (total_visits == 0) or (current_position is None) or (current_position >= total_visits - 1)
-            if st.button("▶", key="next_visit", disabled=next_disabled, help="Next visit", use_container_width=True):
+            if shortcut_button(
+                "▶",
+                ["arrowright"],
+                key="next_visit",
+                disabled=next_disabled,
+                help="Next visit (→)",
+                use_container_width=True,
+                hint=False
+            ):
                 target_index = valid_height_indices[current_position + 1]
                 set_selected_point_index(int(target_index))
                 st.rerun()

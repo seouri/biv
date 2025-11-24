@@ -499,6 +499,7 @@ dependencies = [
     { name = "plotly" },
     { name = "streamlit" },
     { name = "streamlit-aggrid" },
+    { name = "streamlit-shortcuts" },
 ]
 
 [package.optional-dependencies]
@@ -516,6 +517,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1.0" },
     { name = "streamlit", specifier = ">=1.28.0" },
     { name = "streamlit-aggrid", specifier = ">=1.0.4" },
+    { name = "streamlit-shortcuts", specifier = ">=1.2.1" },
 ]
 provides-extras = ["dev"]
 
@@ -1020,6 +1022,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/00/b6/643a83f2654d3fae7b203686a00357b8346bf09d32a9001b8b1e19920c4f/streamlit_aggrid-1.2.0.post1.tar.gz", hash = "sha256:d06dbe3dab6999cbed5eedebab48131301f994802285f6f4bffeb4dba513021f", size = 5669026, upload-time = "2025-11-02T17:21:55.55Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e2/41/aa95ac0c3ab68e205878193725981f4946d492d439bbab7a7e535b5293e1/streamlit_aggrid-1.2.0.post1-py3-none-any.whl", hash = "sha256:4acde4ab5812b8a069dde5f536ef380fcd58de97af96d16b7579330770daf497", size = 5732697, upload-time = "2025-11-02T17:21:51.491Z" },
+]
+
+[[package]]
+name = "streamlit-shortcuts"
+version = "1.2.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "streamlit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/87/6d/a3b9befa11528163b96c216f7e4152c7e6df8976bb6ad8a42fb82e8c1778/streamlit_shortcuts-1.2.1.tar.gz", hash = "sha256:c982ace38ce6f887beef2bd3f16c36d645bdcbee010c5585e6963e4615fc8f16", size = 111285, upload-time = "2025-07-31T21:02:57.65Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e0/b5/a9d1ad477ae69db0b6cef35bf40154ec634a42657ff684a4b3c2024dde36/streamlit_shortcuts-1.2.1-py3-none-any.whl", hash = "sha256:58fa6d375c9f91068bf1400f9870ff3d382b4e4f1dcbf26e05567e4db3547375", size = 6856, upload-time = "2025-07-31T21:02:56.273Z" },
 ]
 
 [[package]]

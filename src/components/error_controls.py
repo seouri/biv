@@ -4,6 +4,7 @@ Error marking controls and metrics display.
 
 import streamlit as st
 import pandas as pd
+from streamlit_shortcuts import shortcut_button, add_shortcuts
 from typing import Set, Optional, List
 from src.utils.calculations import get_point_metrics
 from src.utils.persistence import save_error_labels
@@ -203,11 +204,17 @@ def render_error_controls(
             _save_current_state(patient_id, error_indices - {selected_index})
             st.rerun()
     else:
-        if st.button(
-            "♦️ Mark as Error", 
-            type="primary", 
+        mark_button_key = "mark_as_error_button"
+        mark_shortcuts = ["cmd+x"]
+
+        if shortcut_button(
+            "♦️ Mark as Error (cmd+x)",
+            mark_shortcuts,
+            type="primary",
             use_container_width=True,
-            help="Flag this measurement as an error"
+            help="Flag this measurement as an error (x)",
+            hint=False,
+            key=mark_button_key
         ):
             # Persist the latest comment along with the error flag
             set_point_comment(selected_index, comment)
@@ -223,6 +230,9 @@ def render_error_controls(
                 set_selected_point_index(int(next_index))
             
             st.rerun()
+
+        # Ensure the shortcut also binds to the button key even when the hint is hidden
+        add_shortcuts(**{mark_button_key: mark_shortcuts})
 
 
 def render_patient_completion_controls(
